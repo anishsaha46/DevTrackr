@@ -1,5 +1,7 @@
 package io.devTracker.codeTracker.Service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,5 +20,9 @@ public class ProjectService {
             .userId(userId)
             .build();
         return projectRepository.save(project);
+    }
+
+    public List<Project> getProjectByUserId(String userId){
+        return projectRepository.findByUserId(userId);
     }
 }
