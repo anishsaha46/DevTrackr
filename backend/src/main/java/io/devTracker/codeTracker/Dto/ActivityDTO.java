@@ -20,5 +20,25 @@ public class ActivityDTO {
         String fileExtension
     ) {}
 
-    
+    public record ActivityRequest(
+        @NotBlank(message = "Project name is required")
+        String projectName,
+        
+        String language,
+        
+        @NotBlank(message = "Start time is required")
+        Instant startTime,
+        
+        @NotBlank(message = "End time is required")
+        Instant endTime,
+        
+        String file,
+        Integer timeSpent,
+        String sessionId,
+        String fileExtension
+    ) {}
+
+    public record SubmitActivitiesRequest(
+        List<ActivityRequest> activities
+    ) {}
 }
