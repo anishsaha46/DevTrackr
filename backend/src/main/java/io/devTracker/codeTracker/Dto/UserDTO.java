@@ -49,4 +49,14 @@ public class UserDTO {
     public String getProvider() { return provider; }
     public void setProvider(String provider) { this.provider = provider; }
 
+    public record registerRequest(
+        @NotBlank(message = "Email is required")
+        @Email(message = "Email should be valid")
+        String email,
+        
+        @NotBlank(message = "Password is required")
+        @Size(min = 6, message = "Password must be at least 6 characters")
+        String password
+    ) {}
+
 }
