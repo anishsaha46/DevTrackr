@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import io.devTracker.codeTracker.Dto.ActivityDTO;
@@ -70,5 +72,9 @@ public class ActivityService {
             return activityRepository.findByUserIdAndStartTimeBetween(userId, from, to);
         }
         return activityRepository.findByUserId(userId);
+    }
+
+    public Page<Activity> findActivitiesPage(String userId, Pageable pageable) {
+        return activityRepository.findByUserId(userId, pageable);
     }
 }
