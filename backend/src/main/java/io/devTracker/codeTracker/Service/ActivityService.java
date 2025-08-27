@@ -43,7 +43,18 @@ public class ActivityService {
                 .collect(Collectors.toList());
         return activityRepository.saveAll(activities);
     }
-        public List<Activity> getActivitiesByUserId(String userId) {
+    public List<Activity> getActivitiesByUserId(String userId) {
         return activityRepository.findByUserId(userId);
+    }
+
+    public boolean deleteActivity(String activityId, User user) {
+        return activityRepository.findById(activityId)
+                .map(activity -> {
+                    if (!activity.getUserId().equals(user.getId())) {
+                        throw new SecurityException("Access denied");
+                    }
+                    activityRepository.delete(activity);
+                    return true;
+                }).orElse(false);
     }
 }
