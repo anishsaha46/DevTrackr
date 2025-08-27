@@ -26,5 +26,22 @@ public class ActivityService {
                 .collect(Collectors.toList());
         return activityRepository.saveAll(activities);
     }
+
+    public List<Activity> submitBatchActivities(List<ActivityDTO.ActivityRequest> activityRequests, User user) {
+        List<Activity> activities = activityRequests.stream()
+                .map(a -> Activity.builder()
+                        .userId(user.getId())
+                        .projectName(a.projectName())
+                        .language(a.language())
+                        .startTime(java.sql.Timestamp.from(a.startTime()))
+                        .endTime(java.sql.Timestamp.from(a.endTime()))
+                        .file(a.file())
+                        .timeSpent(a.timeSpent())
+                        .sessionId(a.sessionId())
+                        .fileExtension(a.fileExtension())
+                        .build())
+                .collect(Collectors.toList());
+        return activityRepository.saveAll(activities);
+    }
     
 }
