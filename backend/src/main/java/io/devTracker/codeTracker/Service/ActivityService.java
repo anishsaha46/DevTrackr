@@ -1,5 +1,6 @@
 package io.devTracker.codeTracker.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,5 +57,18 @@ public class ActivityService {
                     activityRepository.delete(activity);
                     return true;
                 }).orElse(false);
+    }
+
+    public List<Activity> findActivities(String userId, String projectName, Date from, Date to) {
+        if (projectName != null && from != null && to != null) {
+            return activityRepository.findByUserIdAndProjectNameAndStartTimeBetween(userId, projectName, from, to);
+        }
+        if (projectName != null) {
+            return activityRepository.findByUserIdAndProjectName(userId, projectName);
+        }
+        if (from != null && to != null) {
+            return activityRepository.findByUserIdAndStartTimeBetween(userId, from, to);
+        }
+        return activityRepository.findByUserId(userId);
     }
 }
