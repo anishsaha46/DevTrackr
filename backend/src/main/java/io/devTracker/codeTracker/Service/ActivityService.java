@@ -46,9 +46,13 @@ public class ActivityService {
                 .collect(Collectors.toList());
         return activityRepository.saveAll(activities);
     }
+
+
     public List<Activity> getActivitiesByUserId(String userId) {
         return activityRepository.findByUserId(userId);
     }
+
+
 
     public boolean deleteActivity(String activityId, User user) {
         return activityRepository.findById(activityId)
@@ -60,6 +64,8 @@ public class ActivityService {
                     return true;
                 }).orElse(false);
     }
+
+
 
     public List<Activity> findActivities(String userId, String projectName, Date from, Date to) {
         if (projectName != null && from != null && to != null) {
@@ -74,7 +80,24 @@ public class ActivityService {
         return activityRepository.findByUserId(userId);
     }
 
+
+
     public Page<Activity> findActivitiesPage(String userId, Pageable pageable) {
+        return activityRepository.findByUserId(userId, pageable);
+    }
+
+    
+
+    public Page<Activity> findActivitiesPage(String userId, String projectName, Date from, Date to, Pageable pageable) {
+        if (projectName != null && from != null && to != null) {
+            return activityRepository.findByUserIdAndProjectNameAndStartTimeBetween(userId, projectName, from, to, pageable);
+        }
+        if (projectName != null) {
+            return activityRepository.findByUserIdAndProjectName(userId, projectName, pageable);
+        }
+        if (from != null && to != null) {
+            return activityRepository.findByUserIdAndStartTimeBetween(userId, from, to, pageable);
+        }
         return activityRepository.findByUserId(userId, pageable);
     }
 }
