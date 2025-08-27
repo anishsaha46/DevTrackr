@@ -1,11 +1,13 @@
 package io.devTracker.codeTracker.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import io.devTracker.codeTracker.Model.Project;
+import io.devTracker.codeTracker.Model.User;
 import io.devTracker.codeTracker.Repository.ProjectRepository;
 
 @Service
@@ -24,5 +26,10 @@ public class ProjectService {
 
     public List<Project> getProjectByUserId(String userId){
         return projectRepository.findByUserId(userId);
+    }
+
+   public Optional<Project> getProjectById(String projectId, User user) {
+        return projectRepository.findById(projectId)
+                .filter(project -> project.getUserId().equals(user.getId()));
     }
 }
