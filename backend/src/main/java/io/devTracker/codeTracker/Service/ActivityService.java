@@ -43,5 +43,7 @@ public class ActivityService {
                 .collect(Collectors.toList());
         return activityRepository.saveAll(activities);
     }
-    
+        public List<Activity> getActivitiesByUserId(String userId) {
+        return activityRepository.findByUserId(userId);
+    }
 }
