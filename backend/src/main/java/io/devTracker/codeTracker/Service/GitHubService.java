@@ -56,4 +56,33 @@ public class GitHubService {
         
         throw new Exception("Failed to exchange code for token");
     }
+
+
+    // Get user info from GitHub
+    public Map<String, Object> getUserInfo(String accessToken) throws Exception {
+        String userUrl = "https://api.github.com/user";
+        
+        // Set headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        headers.set("Accept", "application/vnd.github.v3+json");
+        
+        // Set request entity
+        HttpEntity<String> request = new HttpEntity<>(headers);
+        
+        // Get user info
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+            userUrl, 
+            HttpMethod.GET, 
+            request, 
+            new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+        );
+        
+        // Check response status
+        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+            return response.getBody();
+        }
+        
+        throw new Exception("Failed to get user info from GitHub");
+    }
 }
