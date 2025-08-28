@@ -1,4 +1,4 @@
-package com.example.codetracker.security;
+package io.devTracker.codeTracker.Security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -36,10 +36,10 @@ public class JwtUtil {
 
         // Build and return a signed JWT with user ID and email
         return Jwts.builder()
-                .subject(userId) // Set the subject (user ID)
+                .setSubject(userId) // Set the subject (user ID)
                 .claim("email", email) // Add email as a custom claim
-                .issuedAt(now) // Set issue time
-                .expiration(expiryDate) // Set expiration time
+                .setIssuedAt(now) // Set issue time
+                .setExpiration(expiryDate) // Set expiration time
                 .signWith(jwtSecret) // Sign the token with the secret key
                 .compact(); // Finalize the token creation
     }
@@ -47,7 +47,10 @@ public class JwtUtil {
     public boolean validateJwtToken(String token) {
         try {
             // Parse and validate the token's signature and structure
-            Jwts.parser().verifyWith(jwtSecret).build().parseSignedClaims(token);
+            Jwts.parserBuilder()
+            .setSigningKey(jwtSecret)
+            .build()
+            .parseClaimsJws(token);
             return true; // Token is valid
         } catch (JwtException | IllegalArgumentException e) {
             // Invalid token: signature, format, or expiration issue
@@ -57,11 +60,11 @@ public class JwtUtil {
 
     private Claims getClaims(String token) {
         // Extract and return the claims (payload) from the JWT
-        return Jwts.parser()
-                .verifyWith(jwtSecret)
+        return Jwts.parserBuilder()
+                .setSigningKey(jwtSecret)
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public String getUserIdFromJwtToken(String token) {
