@@ -165,5 +165,20 @@ AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
     };
 }
 
+@Bean
+AuthenticationFailureHandler oAuth2AuthenticationFailureHandler() {
+    return (request, response, exception) -> {
+        // Log the exception
+        logger.error("OAuth2 Authentication Failure: {}", exception.getMessage(), exception);
+
+        // Redirect user back to the frontend login page with error message
+        String redirectUrl = UriComponentsBuilder.fromUriString("http://localhost:3000/login")
+            .queryParam("error", "Authentication Failed: " + exception.getLocalizedMessage())
+            .build().toUriString();
+
+        response.sendRedirect(redirectUrl);
+    };
+}
+
 
 }
