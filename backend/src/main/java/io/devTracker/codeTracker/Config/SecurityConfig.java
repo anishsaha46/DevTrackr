@@ -181,4 +181,30 @@ AuthenticationFailureHandler oAuth2AuthenticationFailureHandler() {
 }
 
 
+@Bean
+CorsConfigurationSource corsConfigurationSource() {
+    // Create a new CORS configuration
+    CorsConfiguration configuration = new CorsConfiguration();
+
+    // Allow requests from this origin (e.g., your React frontend)
+    configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+
+    // Allow these HTTP methods
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+    // Allow these headers
+    configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Auth-Token"));
+
+    // Allow cookies and credentials (important if you're using cookies)
+    configuration.setAllowCredentials(true);
+
+    // Register the config for all endpoints
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+
+    return source;
+}
+
+
+
 }
