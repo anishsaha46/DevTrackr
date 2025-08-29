@@ -83,4 +83,87 @@ SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     return http.build();
 }
 
+@Bean
+AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
+    return (request, response, authentication) -> {
+        // Cast authentication principal to OAuth2 user
+        DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
+        Map<String, Object> attributes = oAuth2User.getAttributes();
+
+        // Get provider (e.g., "google", "github")
+        OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+        String registrationId = oauthToken.getAuthorizedClientRegistrationId();
+
+        // Variables to hold extracted email and name
+        final String email;
+        final String name;
+
+        // Special handling for GitHub
+        if ("github".equals(registrationId)) {
+            // GitHub may not provide email directly
+            String tempEmail = attributes.containsKey("email") && attributes.get("email") != null
+                ? attributes.get("email").toString()
+                : "";
+
+            // If email is missing, construct a fake one using login
+            if (tempEmail.isEmpty() && attributes.containsKey("login")) {
+                tempEmail = attributes.get("login") + "@github.com";
+            }
+            email = tempEmail;
+
+            // Try to get the name
+            String tempName = attributes.containsKey("name") && attributes.get("name") != null
+                ? attributes.get("name").toString()
+                : "";
+
+            // If name is missing, use login as the name
+            if (tempName.isEmpty() && attributes.containsKey("login")) {
+                tempName = attributes.get("login").toString();
+            }
+            name = tempName;
+
+        } else {
+            // For other providers like Google, use standard attributes
+            email = attributes.getOrDefault("email", "").toString();
+            name = attributes.getOrDefault("name", "").toString();
+        }
+
+        // Log the retrieved email
+        logger.info("OAuth2 SUCCESS: User email retrieved from provider {}: {}", registrationId, email);
+
+        // Check if the user already exists in the database
+        User user = userRepository.findByEmail(email)
+            .orElseGet(() -> {
+                // If not found, create a new user
+                logger.info("User not found in DB. Creating new user for email: {}", email);
+                User newUser = User.builder()
+                    .email(email)
+                    .name(name)
+                    .provider(registrationId)
+                    .password("") // No password needed for OAuth users
+                    .build();
+                return userRepository.save(newUser);
+            });
+
+        // If the user exists but has outdated info, update it
+        if (!user.getProvider().equals(registrationId) || (name != null && !name.equals(user.getName()))) {
+            user.setProvider(registrationId);
+            user.setName(name);
+            user = userRepository.save(user);
+        }
+
+        // Generate a JWT token for the user
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+
+        // Redirect to the frontend with the JWT token
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString("http://localhost:3000/auth/callback");
+        uriBuilder.queryParam("token", token);
+        String redirectUrl = uriBuilder.build().toUriString();
+
+        logger.info("Redirecting to frontend: {}", redirectUrl);
+        response.sendRedirect(redirectUrl);
+    };
+}
+
+
 }
