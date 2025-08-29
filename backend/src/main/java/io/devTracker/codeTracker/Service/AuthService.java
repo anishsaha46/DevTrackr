@@ -45,4 +45,28 @@ public class AuthService {
     public String generateToken(User user) {
         return jwtUtil.generateToken(user.getId(), user.getEmail());
     }
+
+    public User findOrCreateGitHubUser(String email, String username, String name, String githubToken) {
+        Optional<User> existingUser = userRepository.findByEmail(email);
+        
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+            // Update existing user with GitHub info
+            user.setProvider("github");
+            user.setUsername(username);
+            user.setName(name);
+            // You might want to store the GitHub token securely
+            return userRepository.save(user);
+        } else {
+            // Create new GitHub user
+            User newUser = User.builder()
+                    .email(email)
+                    .username(username)
+                    .name(name)
+                    .provider("github")
+                    .password("") // No password for OAuth users
+                    .build();
+            return userRepository.save(newUser);
+        }
+    }
 }
