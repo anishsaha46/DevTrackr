@@ -69,4 +69,28 @@ public class AuthService {
             return userRepository.save(newUser);
         }
     }
+
+        public User findOrCreateGoogleUser(String email, String name, String picture, String googleToken) {
+        Optional<User> existingUser = userRepository.findByEmail(email);
+        
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+            // Update existing user with Google info
+            user.setProvider("google");
+            user.setName(name);
+            // You might want to store the Google token securely
+            return userRepository.save(user);
+        } else {
+            // Create new Google user
+            User newUser = User.builder()
+                    .email(email)
+                    .name(name)
+                    .provider("google")
+                    .password("") // No password for OAuth users
+                    .build();
+            return userRepository.save(newUser);
+        }
+    }
+
+    
 }
