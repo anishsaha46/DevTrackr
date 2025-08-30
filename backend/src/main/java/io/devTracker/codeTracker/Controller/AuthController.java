@@ -67,5 +67,13 @@ public class AuthController {
         // Return the token as JSON with HTTP 200 OK
         return ResponseEntity.ok(response);
     }
+
+    // Endpoint to fetch details of the currently authenticated user: GET /api/auth/me
+    @GetMapping("/me")
+    public ResponseEntity<User> me(@AuthenticationPrincipal User user) {
+        // The @AuthenticationPrincipal annotation automatically injects the currently logged-in user
+        // Return user details with HTTP 200 OK
+        return ResponseEntity.ok(user);
+    }
     
 }
