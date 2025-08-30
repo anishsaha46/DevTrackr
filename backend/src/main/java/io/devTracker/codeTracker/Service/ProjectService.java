@@ -34,11 +34,11 @@ public class ProjectService {
     /**
      * Retrieves all projects for the specified user.
      *
-     * @param userId the ID of the user
+     * @param user the ID of the user
      * @return a list of Project entities
      */
-    public List<Project> getProjectByUserId(String userId){
-        return projectRepository.findByUserId(userId);
+    public List<Project> getProjectByUserId(User user){
+        return projectRepository.findByUserId(user.getId());
     }
 
     
