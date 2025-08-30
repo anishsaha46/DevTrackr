@@ -42,5 +42,30 @@ public class AuthController {
         // Return response with HTTP 201 Created status
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+// Endpoint for user login: POST /api/auth/login
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody UserDTO.loginRequest req) {
+        // Logging the incoming login request
+        logger.info("Login request for email: {}", req.email());
+
+        // Call to the service to authenticate user and return a token (if successful)
+        Optional<String> tokenOptional = authService.loginUser(req.email(), req.password());
+
+        // If credentials are invalid (no token returned), respond with 401 Unauthorized
+        if (tokenOptional.isEmpty()) {
+            logger.warn("Invalid credentials for email: {}", req.email());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
+        }
+
+        // On success, wrap the token in a response DTO
+        UserDTO.LoginResponse response = new UserDTO.LoginResponse(tokenOptional.get());
+
+        // Logging the success response
+        logger.info("Returning response for login: {}", response);
+
+        // Return the token as JSON with HTTP 200 OK
+        return ResponseEntity.ok(response);
+    }
     
 }
