@@ -102,6 +102,33 @@ public class ProjectController {
         }
     }
 
+    /**
+     * Update a project's name.
+     * Endpoint: PUT /api/projects/{projectId}
+     */
+    @PutMapping("/{projectId}")
+    public ResponseEntity<?> updateProject(
+            @PathVariable String projectId,
+            @RequestBody ProjectDTO.UpdateProjectRequest req,
+            @AuthenticationPrincipal User user
+    ) {
+        try {
+            // Attempt to update the project
+            Optional<Project> updatedProject = projectService.updateProject(projectId, req.name(), user);
+
+            if (updatedProject.isPresent()) {
+                // If update is successful, return updated project
+                ProjectDTO.ProjectResponse response = convertToResponse(updatedProject.get());
+                return ResponseEntity.ok(response);
+            } else {
+                // If not found, return 404
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Project not found"));
+            }
+        } catch (SecurityException e) {
+            // If the user is unauthorized to update, return 403
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        }
+    }
 
 
 }
