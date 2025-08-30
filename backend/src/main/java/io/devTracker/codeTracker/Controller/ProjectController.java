@@ -65,4 +65,20 @@ public class ProjectController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    /**
+     * Get all projects for the currently authenticated user.
+     * Endpoint: GET /api/projects
+     */
+    @GetMapping
+    public List<ProjectDTO.ProjectResponse> getProjects(@AuthenticationPrincipal User user) {
+        // Retrieve all projects belonging to the current user
+        List<Project> projects = projectService.getProjectByUserId(user);
+
+        // Convert each project to a DTO using a stream
+        return projects.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+
 }
