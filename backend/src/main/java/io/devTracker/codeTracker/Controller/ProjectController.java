@@ -130,5 +130,29 @@ public class ProjectController {
         }
     }
 
+        /**
+    * Delete a project.
+    * Endpoint: DELETE /api/projects/{projectId}
+     */
+    @DeleteMapping("/{projectId}")
+    public ResponseEntity<?> deleteProject(
+            @PathVariable String projectId,
+            @AuthenticationPrincipal User user
+    ) {
+        try {
+            // Attempt to delete the project
+            if (projectService.deleteProject(projectId, user)) {
+                // If deleted, return 204 No Content
+                return ResponseEntity.noContent().build();
+            } else {
+                // If not found, return 404
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Project not found"));
+            }
+        } catch (SecurityException e) {
+            // If the user is unauthorized to delete, return 403
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        }
+    }
+
 
 }
