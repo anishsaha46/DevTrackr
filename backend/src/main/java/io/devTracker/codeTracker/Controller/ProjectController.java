@@ -80,5 +80,28 @@ public class ProjectController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Get a specific project by its ID, checking user ownership.
+     * Endpoint: GET /api/projects/{projectId}
+     */
+    @GetMapping("/{projectId}")
+    public ResponseEntity<?> getProjectById(
+            @PathVariable String projectId,
+            @AuthenticationPrincipal User user
+    ) {
+        // Try to fetch the project for this user
+        Optional<Project> project = projectService.getProjectById(projectId, user);
+
+        if (project.isPresent()) {
+            // Convert and return if found
+            ProjectDTO.ProjectResponse response = convertToResponse(project.get());
+            return ResponseEntity.ok(response);
+        } else {
+            // Return 404 if not found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Project not found"));
+        }
+    }
+
+
 
 }
