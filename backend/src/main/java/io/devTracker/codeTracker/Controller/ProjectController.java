@@ -45,4 +45,24 @@ public class ProjectController {
                 count
         );
     }
+
+    /**
+     * Create a new project.
+     * Endpoint: POST /api/projects
+     */
+    @PostMapping
+    public ResponseEntity<ProjectDTO.ProjectResponse> createProject(
+            @RequestBody ProjectDTO.CreateProjectRequest req,
+            @AuthenticationPrincipal User user // Gets the currently authenticated user
+    ) {
+        // Create a new project using service logic
+        Project createdProject = projectService.createProject(req.name(), user.getId());
+
+        // Convert the project to a response DTO
+        ProjectDTO.ProjectResponse response = convertToResponse(createdProject);
+
+        // Return the response with HTTP 201 (Created)
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
 }
