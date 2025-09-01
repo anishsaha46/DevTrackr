@@ -68,4 +68,22 @@ public class ActivityController {
 
         return new ResponseEntity<>(responses, HttpStatus.CREATED);
     }
+
+    /**
+     * Submit a batch of activities using a list of activity requests.
+     */
+    @PostMapping("/batch")
+    public ResponseEntity<List<ActivityDTO.ActivityResponse>> submitBatchActivities(
+            @RequestBody List<ActivityDTO.ActivityRequest> activities,
+            @AuthenticationPrincipal User user) {
+        
+        List<Activity> savedActivities = activityService.submitBatchActivities(activities, user);
+        List<ActivityDTO.ActivityResponse> responses = savedActivities.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return new ResponseEntity<>(responses, HttpStatus.CREATED);
+    }
+    
+    
 }
