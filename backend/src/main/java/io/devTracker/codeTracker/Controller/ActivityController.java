@@ -136,4 +136,37 @@ public class ActivityController {
                 .map(this::convertToResponse);
     }
     
+
+ /**
+     * Retrieve paginated activities with optional filters.
+     * Supports project name and date range filters.
+     */
+    @GetMapping("/page2")
+    public Page<ActivityDTO.ActivityResponse> getActivitiesPageFiltered(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String projectName,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @AuthenticationPrincipal User user) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+
+        Date fromDate = null;
+        Date toDate = null;
+
+        if (from != null) {
+            fromDate = Date.from(LocalDate.parse(from)
+                    .atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+        if (to != null) {
+            toDate = Date.from(LocalDate.parse(to)
+                    .plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+
+        // Retrieve paginated and filtered activities
+        return activityService.findActivitiesPage(
+                user.getId(), projectName, fromDate, toDate, pageable)
+                .map(this::convertToResponse);
+    }
 }
