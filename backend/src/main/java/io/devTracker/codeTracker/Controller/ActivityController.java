@@ -84,6 +84,40 @@ public class ActivityController {
 
         return new ResponseEntity<>(responses, HttpStatus.CREATED);
     }
+
+
+    /**
+     * Retrieve a list of activities for the authenticated user.
+     * Allows optional filtering by project name and date range.
+     */
+    @GetMapping
+    public List<ActivityDTO.ActivityResponse> getActivities(
+            @RequestParam(required = false) String projectName,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @AuthenticationPrincipal User user) {
+
+        // Convert string dates to java.util.Date objects
+        Date fromDate = null;
+        Date toDate = null;
+
+        if (from != null) {
+            fromDate = Date.from(LocalDate.parse(from)
+                    .atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+        if (to != null) {
+            // Add one day to make 'to' date inclusive
+            toDate = Date.from(LocalDate.parse(to)
+                    .plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+
+        // Retrieve filtered activities
+        List<Activity> activities = activityService.findActivities(
+                user.getId(), projectName, fromDate, toDate);
+
+        // Convert to response DTOs
+        return activities.stream().map(this::convertToResponse).collect(Collectors.toList());
+    }
     
     
 }
