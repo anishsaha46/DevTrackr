@@ -169,4 +169,18 @@ public class ActivityController {
                 user.getId(), projectName, fromDate, toDate, pageable)
                 .map(this::convertToResponse);
     }
+
+        /**
+     * Get all activities by project name for the authenticated user.
+     */
+    @GetMapping("/by-project/{projectName}")
+    public List<ActivityDTO.ActivityResponse> getByProject(
+            @PathVariable String projectName,
+            @AuthenticationPrincipal User user) {
+
+        List<Activity> activities = activityService.findActivities(
+                user.getId(), projectName, null, null);
+
+        return activities.stream().map(this::convertToResponse).collect(Collectors.toList());
+    }
 }
