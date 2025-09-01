@@ -28,9 +28,9 @@ public class ActivityController {
     @Autowired
     private ActivityService activityService;
 
-/**
-     * Helper method to convert Activity model to ActivityResponse DTO.
-     */
+    /**
+    * Helper method to convert Activity model to ActivityResponse DTO.
+    */
     private ActivityDTO.ActivityResponse convertToResponse(Activity activity) {
         return new ActivityDTO.ActivityResponse(
                 activity.getId(),
@@ -49,10 +49,10 @@ public class ActivityController {
     }
 
     /**
-     * Submit a bulk of activities using a wrapper request object.
-     * Accepts activities in request body and authenticated user.
-     * Returns list of saved activity responses.
-     */
+    * Submit a bulk of activities using a wrapper request object.
+    * Accepts activities in request body and authenticated user.
+    * Returns list of saved activity responses.
+    */
     @PostMapping("/bulk")
     public ResponseEntity<List<ActivityDTO.ActivityResponse>> submitActivities(
             @RequestBody ActivityDTO.SubmitActivitiesRequest req,
@@ -70,8 +70,8 @@ public class ActivityController {
     }
 
     /**
-     * Submit a batch of activities using a list of activity requests.
-     */
+    * Submit a batch of activities using a list of activity requests.
+    */
     @PostMapping("/batch")
     public ResponseEntity<List<ActivityDTO.ActivityResponse>> submitBatchActivities(
             @RequestBody List<ActivityDTO.ActivityRequest> activities,
@@ -87,9 +87,9 @@ public class ActivityController {
 
 
     /**
-     * Retrieve a list of activities for the authenticated user.
-     * Allows optional filtering by project name and date range.
-     */
+    * Retrieve a list of activities for the authenticated user.
+    * Allows optional filtering by project name and date range.
+    */
     @GetMapping
     public List<ActivityDTO.ActivityResponse> getActivities(
             @RequestParam(required = false) String projectName,
@@ -120,8 +120,8 @@ public class ActivityController {
     }
     
     /**
-     * Retrieve paginated activities for the authenticated user.
-     */
+    * Retrieve paginated activities for the authenticated user.
+    */
     @GetMapping("/page")
     public Page<ActivityDTO.ActivityResponse> getActivitiesPage(
             @RequestParam(defaultValue = "0") int page,
@@ -137,7 +137,7 @@ public class ActivityController {
     }
     
 
- /**
+    /**
      * Retrieve paginated activities with optional filters.
      * Supports project name and date range filters.
      */
@@ -170,9 +170,9 @@ public class ActivityController {
                 .map(this::convertToResponse);
     }
 
-        /**
-     * Get all activities by project name for the authenticated user.
-     */
+    /**
+    * Get all activities by project name for the authenticated user.
+    */
     @GetMapping("/by-project/{projectName}")
     public List<ActivityDTO.ActivityResponse> getByProject(
             @PathVariable String projectName,
@@ -182,5 +182,29 @@ public class ActivityController {
                 user.getId(), projectName, null, null);
 
         return activities.stream().map(this::convertToResponse).collect(Collectors.toList());
+    }
+
+        /**
+    * Delete a specific activity by ID.
+    * Returns 204 No Content if deleted, 404 if not found, or 403 if not authorized.
+     */
+    @DeleteMapping("/{activityId}")
+    public ResponseEntity<?> deleteActivity(
+            @PathVariable String activityId,
+            @AuthenticationPrincipal User user) {
+
+        try {
+            boolean deleted = activityService.deleteActivity(activityId, user);
+
+            if (deleted) {
+                return ResponseEntity.noContent().build(); // 204 No Content
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Activity not found")); // 404
+            }
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", e.getMessage())); // 403
+        }
     }
 }
