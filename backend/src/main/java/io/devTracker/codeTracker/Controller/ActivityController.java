@@ -119,5 +119,21 @@ public class ActivityController {
         return activities.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     
+    /**
+     * Retrieve paginated activities for the authenticated user.
+     */
+    @GetMapping("/page")
+    public Page<ActivityDTO.ActivityResponse> getActivitiesPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal User user) {
+
+        // Pageable with descending sort by start time
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+
+        // Get paginated activities and convert to response DTOs
+        return activityService.findActivitiesPage(user.getId(), pageable)
+                .map(this::convertToResponse);
+    }
     
 }
