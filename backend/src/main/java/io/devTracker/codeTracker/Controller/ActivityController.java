@@ -47,4 +47,25 @@ public class ActivityController {
                 activity.getFileExtension()
         );
     }
+
+    /**
+     * Submit a bulk of activities using a wrapper request object.
+     * Accepts activities in request body and authenticated user.
+     * Returns list of saved activity responses.
+     */
+    @PostMapping("/bulk")
+    public ResponseEntity<List<ActivityDTO.ActivityResponse>> submitActivities(
+            @RequestBody ActivityDTO.SubmitActivitiesRequest req,
+            @AuthenticationPrincipal User user) {
+        
+        // Save the submitted activities for the authenticated user
+        List<Activity> savedActivities = activityService.submitActivities(req.activities(), user);
+
+        // Convert model to DTO for response
+        List<ActivityDTO.ActivityResponse> responses = savedActivities.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return new ResponseEntity<>(responses, HttpStatus.CREATED);
+    }
 }
