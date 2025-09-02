@@ -103,4 +103,40 @@ public class ReportController {
         private final String date;
         private final int activityLevel;
     }
+
+    
+
+    /**
+    * Returns a list of heatmap entries representing the number of activities per day
+    * for a specified year. Used for visualizing daily activity frequency.
+    *
+    * @param year the year for which to generate the heatmap data
+    * @param user the authenticated user for whom the heatmap data is being generated
+    * @return a list of HeatmapEntry objects, each containing a date and the corresponding activity level
+    */
+    @GetMapping("/heatmap")
+    public List<HeatmapEntry> getHeatmap(@RequestParam int year, @AuthenticationPrincipal User user) {
+        // Define date range: Jan 1 to Dec 31 of the given year
+        LocalDate startOfYear = LocalDate.of(year, 1, 1);
+        LocalDate endOfYear = LocalDate.of(year, 12, 31);
+
+        // Fetch user activities within the given year
+        List<Activity> activities = activityRepository.findByUserIdAndStartTimeBetween(
+                user.getId(),
+                Date.from(startOfYear.atStartOfDay(ZoneId.systemDefault()).toInstant()),
+                Date.from(endOfYear.atStartOfDay(ZoneId.systemDefault()).toInstant())
+        );
+
+        // Group activities by date and count how many occurred on each day
+        Map<LocalDate, Integer> map = activities.stream()
+                .collect(Collectors.groupingBy(
+                        a -> a.getStartTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                        Collectors.summingInt(a -> 1)
+                ));
+
+        // Convert the map into a list of HeatmapEntry objects
+        return map.entrySet().stream()
+                .map(e -> new HeatmapEntry(e.getKey().toString(), e.getValue()))
+                .collect(Collectors.toList());
+    }
 }
