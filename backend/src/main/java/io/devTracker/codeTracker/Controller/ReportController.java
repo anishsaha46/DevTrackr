@@ -104,7 +104,7 @@ public class ReportController {
         private final int activityLevel;
     }
 
-    
+
 
     /**
     * Returns a list of heatmap entries representing the number of activities per day
@@ -138,5 +138,23 @@ public class ReportController {
         return map.entrySet().stream()
                 .map(e -> new HeatmapEntry(e.getKey().toString(), e.getValue()))
                 .collect(Collectors.toList());
+    }
+
+
+
+    /**
+    * Returns a paginated timeline of the user's activities sorted by start time (most recent first).
+    */
+    @GetMapping("/timeline")
+    public Page<Activity> getTimeline(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal User user) {
+
+        // Create a pageable object with descending sort by startTime
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+
+        // Return a page of activities for the user
+        return activityRepository.findByUserId(user.getId(), pageable);
     }
 }
