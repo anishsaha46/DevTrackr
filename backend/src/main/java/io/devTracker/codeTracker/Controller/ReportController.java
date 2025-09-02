@@ -90,4 +90,17 @@ public class ReportController {
                 "byProject", byProject
         );
     }
+
+
+    /**
+    * DTO for representing heatmap data (used in /heatmap endpoint).
+    * Each entry includes:
+    * - date (String)
+    * - activity level (int)
+    */
+    @Data
+    public static class HeatmapEntry {
+        private final String date;
+        private final int activityLevel;
+    }
 }
