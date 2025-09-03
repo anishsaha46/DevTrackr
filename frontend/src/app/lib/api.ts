@@ -141,3 +141,25 @@ export async function getUserActivities() {
     throw err;
   }
 }
+
+
+// Get activity summary
+export async function getActivitySummary(period = "week") {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Authentication required");
+  
+  try {
+    const res = await fetch(`http://localhost:8080/api/reports/summary?period=${period}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to get activity summary: ${res.status} ${res.statusText}`);
+    }
+    
+    return res.json();
+  } catch (err) {
+    console.error("Error fetching activity summary:", err);
+    throw err;
+  }
+}
