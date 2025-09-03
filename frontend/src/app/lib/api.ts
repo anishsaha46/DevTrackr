@@ -163,3 +163,25 @@ export async function getActivitySummary(period = "week") {
     throw err;
   }
 }
+
+
+// Get activity heatmap
+export async function getActivityHeatmap(year = new Date().getFullYear()) {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Authentication required");
+  
+  try {
+    const res = await fetch(`http://localhost:8080/api/reports/heatmap?year=${year}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to get activity heatmap: ${res.status} ${res.statusText}`);
+    }
+    
+    return res.json();
+  } catch (err) {
+    console.error("Error fetching activity heatmap:", err);
+    throw err;
+  }
+}
