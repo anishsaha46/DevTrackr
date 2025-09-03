@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+
 // Login a user
 export async function login(email: string, password: string) {
   try {
@@ -56,4 +58,43 @@ function getAuthHeaders() {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   };
+}
+
+// Get current user data
+export async function getCurrentUser() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    console.log("No token found in localStorage");
+    return null;
+  }
+  
+  try {
+    console.log("Fetching user data with token:", token.substring(0, 20) + "...");
+    const res = await fetch("http://localhost:8080/api/auth/me", {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include' // Important for cookies if using them
+    });
+    
+    console.log("Auth response status:", res.status);
+    
+    if (!res.ok) {
+      if (res.status === 401) {
+        console.log("Token invalid or expired, removing from storage");
+        localStorage.removeItem("token");
+      }
+      const error = await res.text();
+      console.error("Auth error:", error);
+      return null;
+    }
+    
+    const userData = await res.json();
+    console.log("User data received:", userData);
+    return userData;
+  } catch (err) {
+    console.error("Error fetching user data:", err);
+    return null;
+  }
 }
