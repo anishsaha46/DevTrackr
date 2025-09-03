@@ -119,3 +119,25 @@ export async function getUserProjects() {
     throw err;
   }
 }
+
+
+// Get user's activities
+export async function getUserActivities() {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Authentication required");
+  
+  try {
+    const res = await fetch("http://localhost:8080/api/activities", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to get activities: ${res.status} ${res.statusText}`);
+    }
+    
+    return res.json();
+  } catch (err) {
+    console.error("Error fetching activities:", err);
+    throw err;
+  }
+}
