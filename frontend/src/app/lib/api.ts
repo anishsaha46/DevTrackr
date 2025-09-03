@@ -185,3 +185,25 @@ export async function getActivityHeatmap(year = new Date().getFullYear()) {
     throw err;
   }
 }
+
+
+// Get activity timeline
+export async function getActivityTimeline(page = 0, size = 20) {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Authentication required");
+  
+  try {
+    const res = await fetch(`http://localhost:8080/api/reports/timeline?page=${page}&size=${size}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to get activity timeline: ${res.status} ${res.statusText}`);
+    }
+    
+    return res.json();
+  } catch (err) {
+    console.error("Error fetching activity timeline:", err);
+    throw err;
+  }
+}
