@@ -98,3 +98,24 @@ export async function getCurrentUser() {
     return null;
   }
 }
+
+// Get user's projects
+export async function getUserProjects() {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Authentication required");
+  
+  try {
+    const res = await fetch("http://localhost:8080/api/projects", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to get projects: ${res.status} ${res.statusText}`);
+    }
+    
+    return res.json();
+  } catch (err) {
+    console.error("Error fetching projects:", err);
+    throw err;
+  }
+}
