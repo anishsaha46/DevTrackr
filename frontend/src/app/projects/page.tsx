@@ -25,5 +25,20 @@ export default function ProjectPage(){
     useEffect(()=>{
         load();
     },[]);
+
+  const add = async () => {
+    if (!name.trim()) return;
+    setLoading(true);
+    try {
+      await apiFetch(`/projects`, { method: "POST", body: JSON.stringify({ name }), headers: { "Content-Type": "application/json" } });
+      toast.success("Project created");
+      setName("");
+      load();
+    } catch (e:any) {
+      toast.error(e.message || "Failed to create project");
+    } finally {
+      setLoading(false);
+    }
+  };
 }
 
