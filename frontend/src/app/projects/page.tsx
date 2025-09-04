@@ -40,5 +40,18 @@ export default function ProjectPage(){
       setLoading(false);
     }
   };
+
+  const del = async (id: string) => {
+    setLoading(true);
+    try {
+      await apiFetch(`/projects/${id}`, { method: "DELETE" });
+      toast.success("Project deleted");
+      load();
+    } catch (e:any) {
+      toast.error(e.message || "Failed to delete project");
+    } finally {
+      setLoading(false);
+    }
+  };
 }
 
