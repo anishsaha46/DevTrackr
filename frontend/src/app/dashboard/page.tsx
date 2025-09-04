@@ -49,3 +49,58 @@ type HeatmapEntry = {
   date: string;
   count: number;
 };
+
+export default function DashboardPage(){
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [heatmap, setHeatmap] = useState<HeatmapEntry[]>([]);
+  const [timeline, setTimeline] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  useEffect(()=>{
+    const checkAuth = async()=>{
+        if(typeof window !== "undefined"){
+            let token=localStorage.getItem("token");
+            if(!token){
+                token=sessionStorage.getItem("token");
+                if(!token){
+                    router.replace("/login");
+                    return;
+                }
+            }
+
+            try{
+                const userData=await getCurrentUser();
+                if(!userData){
+                    router.replace("/login");
+                    return;
+                }
+                setUser(userData);
+
+                const projectData= await getUserProjects();
+                setProjects(projectData || []);
+
+                const activitiesData= await getUserActivities();
+                setActivities(activitiesData || []);
+
+                const summaryData= await getActivitySummary();
+                setSummary(summaryData || null);
+
+                const heatmapData= await getActivityHeatmap();
+                setHeatmap(heatmapData || []);
+
+                const timelineData= await getActivityTimeline();
+                setTimeline(timelineData?.content || []);
+            }catch(error){
+                console.log("Error fetching dashboard data",error);
+            }finally{
+                setLoading(false);
+            }
+        }
+    }
+    checkAuth();
+  }),[router]}
