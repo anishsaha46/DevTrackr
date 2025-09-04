@@ -104,3 +104,21 @@ export default function DashboardPage(){
     }
     checkAuth();
   }),[router]}
+
+    const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.replace("/login");
+  };
+
+  // Format milliseconds to hours and minutes
+  const formatTime = (ms: number) => {
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
+
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase();
+  };
