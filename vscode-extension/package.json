@@ -1,0 +1,99 @@
+{
+  "name": "activity-tracker",
+  "displayName": "Activity Tracker",
+  "description": "Track coding activity and send data to backend API",
+  "version": "1.0.0",
+  "publisher": "your-publisher-name",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "activity",
+    "tracker",
+    "analytics",
+    "productivity"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "activity-tracker.startTracking",
+        "title": "Start Tracking",
+        "category": "Activity Tracker"
+      },
+      {
+        "command": "activity-tracker.stopTracking",
+        "title": "Stop Tracking",
+        "category": "Activity Tracker"
+      },
+      {
+        "command": "activity-tracker.toggleTracking",
+        "title": "Toggle Tracking",
+        "category": "Activity Tracker"
+      },
+      {
+        "command": "activity-tracker.configureToken",
+        "title": "Configure JWT Token",
+        "category": "Activity Tracker"
+      }
+    ],
+    "configuration": {
+      "title": "Activity Tracker",
+      "properties": {
+        "activityTracker.apiEndpoint": {
+          "type": "string",
+          "default": "http://localhost:8080/api/activities",
+          "description": "Backend API endpoint for activity data (supports /batch for bulk operations)"
+        },
+        "activityTracker.projectId": {
+          "type": "string",
+          "default": "demo-project",
+          "description": "Project identifier for activity tracking"
+        },
+        "activityTracker.syncInterval": {
+          "type": "number",
+          "default": 60,
+          "description": "Interval in seconds to sync activity data"
+        },
+        "activityTracker.jwtToken": {
+          "type": "string",
+          "default": "",
+          "description": "JWT token for API authentication (will be migrated to secure storage)"
+        },
+        "activityTracker.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start tracking when VS Code opens"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "16.x",
+    "@types/node-fetch": "^2.6.2",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "@vscode/vsce": "^2.15.0",
+    "eslint": "^8.28.0",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
