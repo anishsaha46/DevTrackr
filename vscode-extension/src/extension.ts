@@ -59,4 +59,33 @@ export class ActivityTracker{
     // Load any previously cached offline activities on startup
     this.loadOfflineCache();
   }
+
+
+
+  // Get configuration settings from VS Code settings and secure storage
+  private async getConfiguration() {
+    const config = vscode.workspace.getConfiguration('activityTracker');
+    
+    // Try to get JWT token from secure storage first (recommended)
+    let jwtToken = await this.context.secrets.get('activityTracker.jwtToken');
+    if (!jwtToken) {
+      // Fallback to old settings location
+      jwtToken = config.get<string>('jwtToken', '');
+      // If found in settings, migrate to secure storage for better security
+      if (jwtToken) {
+        await this.context.secrets.store('activityTracker.jwtToken', jwtToken);
+        // Remove from settings to avoid storing sensitive data in plain text
+        await config.update('jwtToken', undefined, vscode.ConfigurationTarget.Global);
+      }
+    }
+    // Return configuration object with all needed settings
+    return {
+      apiEndpoint: config.get<string>('apiEndpoint', 'http://localhost:8080/api/activities'),
+      projectId: this.detectProjectId(),
+      syncInterval: config.get<number>('syncInterval', 60) * 1000, // Convert minutes to milliseconds
+      jwtToken: jwtToken || ''
+    };
+  }
+
+  
 }
