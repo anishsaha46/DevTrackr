@@ -109,5 +109,68 @@ export class ActivityTracker{
     return config.get<string>('projectId', 'unknown-project');
   }
 
-  
+  // Update the status bar item display based on tracking state
+  private updateStatusBar() {
+    // Choose icon based on tracking state
+    const icon = this.isTracking ? '$(pulse)' : '$(circle-outline)';
+    // Set the text with icon and status
+    this.statusBarItem.text = `${icon} Tracking: ${this.isTracking ? 'On' : 'Off'}`;
+    // Set tooltip that appears on hover
+    this.statusBarItem.tooltip = this.isTracking 
+      ? 'Click to stop activity tracking' 
+      : 'Click to start activity tracking';
+  }
+
+  // Detect programming language from VS Code document
+  private getLanguageFromDocument(document: vscode.TextDocument): string | undefined {
+    // Primary method: Use VS Code's built-in language detection
+    if (document.languageId && document.languageId !== 'plaintext') {
+      return document.languageId;
+    }
+    
+    // Fallback method: Map file extension to language
+    const fileName = document.fileName;
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    
+    // Mapping of common file extensions to language names
+    const extensionMap: { [key: string]: string } = {
+      'js': 'javascript',
+      'jsx': 'javascriptreact',
+      'ts': 'typescript',
+      'tsx': 'typescriptreact',
+      'py': 'python',
+      'java': 'java',
+      'cpp': 'cpp',
+      'c': 'c',
+      'cs': 'csharp',
+      'php': 'php',
+      'rb': 'ruby',
+      'go': 'go',
+      'rs': 'rust',
+      'swift': 'swift',
+      'kt': 'kotlin',
+      'scala': 'scala',
+      'sh': 'shellscript',
+      'ps1': 'powershell',
+      'sql': 'sql',
+      'html': 'html',
+      'css': 'css',
+      'scss': 'scss',
+      'less': 'less',
+      'json': 'json',
+      'xml': 'xml',
+      'yaml': 'yaml',
+      'yml': 'yaml',
+      'md': 'markdown',
+      'vue': 'vue',
+      'svelte': 'svelte'
+    };
+    
+    // Return mapped language or the extension itself, or 'unknown' if no extension
+    return extension ? (extensionMap[extension] || extension) : 'unknown';
+  }
 }
+
+
+
+
