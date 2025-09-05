@@ -87,5 +87,27 @@ export class ActivityTracker{
     };
   }
 
+  // Determine the project ID based on the current workspace
+  // Determine the project ID based on the current workspace
+  private detectProjectId(document?: vscode.TextDocument): string {
+    // If a specific document is provided, try to get its workspace folder
+    if (document) {
+      const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+      if (workspaceFolder) {
+        return workspaceFolder.name;
+      }
+    }
+    
+    // Fallback to the first available workspace folder
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (workspaceFolder) {
+      return workspaceFolder.name;
+    }
+    
+    // Last resort: use configured project ID or default
+    const config = vscode.workspace.getConfiguration('activityTracker');
+    return config.get<string>('projectId', 'unknown-project');
+  }
+
   
 }
