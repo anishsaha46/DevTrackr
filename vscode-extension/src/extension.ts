@@ -200,6 +200,27 @@ export class ActivityTracker{
     return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  // Start tracking activity for a specific file
+  private startFileActivity(document: vscode.TextDocument) {
+    if (!this.isTracking) return;  // Don't start if tracking is disabled
+
+    // Stop any currently tracked activity first
+    this.stopCurrentActivity();
+
+    // Create new activity tracking object
+    this.currentActivity = {
+      fileName: this.getRelativeFileName(document),
+      language: this.getLanguageFromDocument(document),
+      startTime: Date.now(),  // Record when tracking started
+      totalTime: 0            // Initialize accumulated time
+    };
+
+    // Update last activity time to current time
+    this.lastActivityTime = Date.now();
+  }
+
+  
+
 
 
 
