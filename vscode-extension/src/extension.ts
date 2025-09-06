@@ -195,6 +195,11 @@ export class ActivityTracker{
     return vscode.workspace.asRelativePath(document.fileName, false);
   }
 
+    // Generate a unique session ID for the current tracking session
+  private generateSessionId(): string {
+    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
 
 
 
