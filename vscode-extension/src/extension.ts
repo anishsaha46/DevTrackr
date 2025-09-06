@@ -219,6 +219,53 @@ export class ActivityTracker{
     this.lastActivityTime = Date.now();
   }
 
+  // Stop tracking the current activity and queue it for sending
+  private stopCurrentActivity() {
+    if (this.currentActivity) {
+      const now = Date.now();
+      
+      // Check if user has been inactive too long
+      if (now - this.lastActivityTime > this.inactivityThreshold) {
+        console.log('User was inactive, resetting current activity');
+        this.currentActivity = null;  // Discard inactive session
+        return;
+      }
+      
+      // Calculate time spent on this activity
+      const timeDiff = now - this.currentActivity.startTime;
+      this.currentActivity.totalTime += timeDiff;
+      
+      // Only queue activities with meaningful duration (more than 5 seconds)
+      if (this.currentActivity.totalTime > 5000) {
+        this.queueActivity(this.currentActivity);
+      }
+    }
+  }
+
+
+    // Add completed activity to the queue for sending to server
+  private async queueActivity(activity: FileActivity) {
+    const activeEditor = vscode.window.activeTextEditor;
+    const document = activeEditor?.document;
+    const config = await this.getConfiguration();
+    
+    // Create queued activity object with all required data
+    const queuedActivity: QueuedActivity = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,  // Unique ID
+      projectId: document ? this.detectProjectId(document) : config.projectId,
+      language: activity.language,
+      file: activity.fileName,
+      timeSpent: Math.round(activity.totalTime / 1000), // Convert milliseconds to seconds
+      timestamp: new Date().toISOString(),              // Current timestamp in ISO format
+      sessionId: this.currentSessionId,
+      fileExtension: document ? this.getFileExtension(document) : undefined
+    };
+
+    // Add to queue and log for debugging
+    this.activityQueue.push(queuedActivity);
+    console.log('Queued activity:', queuedActivity);
+  }
+
   
 
 
