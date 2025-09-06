@@ -266,6 +266,19 @@ export class ActivityTracker{
     console.log('Queued activity:', queuedActivity);
   }
 
+  // Handle user activity (typing, editing) to update timing
+  private onDocumentChange() {
+    this.lastActivityTime = Date.now();  // Update last activity timestamp
+    
+    // If currently tracking a file, update its timing
+    if (this.currentActivity) {
+      const now = Date.now();
+      const timeDiff = now - this.currentActivity.startTime;
+      this.currentActivity.totalTime += timeDiff;  // Add elapsed time
+      this.currentActivity.startTime = now;        // Reset start time for next interval
+    }
+  }
+
   
 
 
