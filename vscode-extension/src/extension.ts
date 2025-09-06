@@ -169,6 +169,22 @@ export class ActivityTracker{
     // Return mapped language or the extension itself, or 'unknown' if no extension
     return extension ? (extensionMap[extension] || extension) : 'unknown';
   }
+
+  // Extract file extension from document
+  private getFileExtension(document: vscode.TextDocument): string {
+    const fileName = document.fileName;
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    return extension || 'unknown';
+  }
+
+
+
+
+
+
+
+
+
 }
 
 
