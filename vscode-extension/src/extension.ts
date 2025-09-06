@@ -178,6 +178,22 @@ export class ActivityTracker{
   }
 
 
+  // Get relative file path within the workspace
+  private getRelativeFileName(document: vscode.TextDocument): string {
+    // Try to get relative path from the document's workspace folder
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+    if (workspaceFolder) {
+      return vscode.workspace.asRelativePath(document.fileName, false);
+    }
+    
+    // If no workspace folders, just return the file name
+    if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+      return path.basename(document.fileName);
+    }
+    
+    // Default to VS Code's relative path calculation
+    return vscode.workspace.asRelativePath(document.fileName, false);
+  }
 
 
 
