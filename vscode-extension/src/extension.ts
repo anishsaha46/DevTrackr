@@ -210,7 +210,7 @@ export class ActivityTracker{
     // Create new activity tracking object
     this.currentActivity = {
       fileName: this.getRelativeFileName(document),
-      language: this.getLanguageFromDocument(document),
+      language: this.getLanguageFromDocument(document) || 'unknown',
       startTime: Date.now(),  // Record when tracking started
       totalTime: 0            // Initialize accumulated time
     };
