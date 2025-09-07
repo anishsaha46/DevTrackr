@@ -500,6 +500,15 @@ export class ActivityTracker{
     vscode.window.showInformationMessage('Activity tracking stopped');
   }
 
+    // Public method to toggle tracking on/off
+  public async toggleTracking() {
+    if (this.isTracking) {
+      await this.stopTracking();
+    } else {
+      await this.startTracking();
+    }
+  }
+
 
 
 
