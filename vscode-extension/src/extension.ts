@@ -409,7 +409,17 @@ export class ActivityTracker{
     }
   }
 
-
+  // Try to send previously cached offline activities
+  private async processCachedActivities() {
+    if (this.offlineCache.length === 0) return;  // Nothing cached
+    
+    const success = await this.sendActivityBatch(this.offlineCache);
+    if (success) {
+      console.log(`Successfully sent ${this.offlineCache.length} cached activities`);
+      this.offlineCache = [];    // Clear cache
+      this.saveOfflineCache();   // Update persistent storage
+    }
+  }
 
 
 
