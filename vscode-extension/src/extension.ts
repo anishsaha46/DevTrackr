@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import * as path from 'path';
+import { scheduler } from 'timers/promises';
 
 // Interface defining the structure of activity data sent to the server
 interface ActivityData {
@@ -558,7 +559,7 @@ export class ActivityTracker{
   }
 
 
-    // Clean up resources when extension is deactivated
+  // Clean up resources when extension is deactivated
   public async dispose() {
     // Perform final sync before disposal
     if (this.isTracking) {
@@ -580,7 +581,28 @@ export class ActivityTracker{
   }
 }
 
+// Extension activation function - called when extension is loaded
+export function activate(context: vscode.ExtensionContext) {
+  console.log('Activity Tracker extension is now active');
 
+  // Create the main tracker instance
+  const tracker = new ActivityTracker(context);
+  
+  // Register event listeners for file activities
+  tracker.registerEventListeners();
+
+  // Register VS Code commands that users can execute
+  const startCommand = vscode.commands.registerCommand('activity-tracker.startTracking', () => {
+    tracker.startTracking();
+  });
+
+  const stopCommand = vscode.commands.registerCommand('activity-tracker.stopTracking', () => {
+    tracker.stopTracking();
+  });
+
+  const toggleCommand = vscode.commands.registerCommand('activity-tracker.toggleTracking', () => {
+    tracker.toggleTracking();
+  });
 
 
 
