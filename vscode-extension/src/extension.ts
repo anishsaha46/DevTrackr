@@ -632,8 +632,10 @@ export function activate(context: vscode.ExtensionContext) {
   }
 }
 
-
-
+// Extension deactivation function - called when extension is unloaded
+export async function deactivate() {
+  console.log('Activity Tracker extension is now deactivated');
+  // Extension cleanup is handled by the dispose() method
 }
 
 
