@@ -510,6 +510,22 @@ export class ActivityTracker{
   }
 
 
+  // Private method to prompt user for JWT token configuration
+  private async configureToken() {
+    const token = await vscode.window.showInputBox({
+      prompt: 'Enter your JWT token for activity tracking',
+      password: true,  // Hide input for security
+      placeHolder: 'JWT token...'
+    });
+    
+    // Save token to secure storage if provided
+    if (token) {
+      await this.context.secrets.store('activityTracker.jwtToken', token);
+      vscode.window.showInformationMessage('JWT token saved securely');
+    }
+  }
+
+
 
 
 
