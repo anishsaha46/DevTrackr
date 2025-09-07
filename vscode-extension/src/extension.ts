@@ -526,7 +526,36 @@ export class ActivityTracker{
   }
 
 
+// Register VS Code event listeners for file activity
+  public registerEventListeners() {
+    // Listen for when user switches to a different file
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      if (editor && this.isTracking) {
+        this.startFileActivity(editor.document);  // Start tracking new file
+      }
+    });
 
+    // Listen for document changes (user typing/editing)
+    vscode.workspace.onDidChangeTextDocument((event) => {
+      if (this.isTracking && event.document === vscode.window.activeTextEditor?.document) {
+        this.onDocumentChange();  // Update activity timing
+      }
+    });
+
+    // Listen for file save events
+    vscode.workspace.onDidSaveTextDocument((document) => {
+      if (this.isTracking && document === vscode.window.activeTextEditor?.document) {
+        this.onDocumentChange();  // Update activity timing
+      }
+    });
+
+    // Listen for window focus changes to handle inactivity
+    vscode.window.onDidChangeWindowState((state) => {
+      if (state.focused && this.isTracking) {
+        this.lastActivityTime = Date.now();  // Reset activity timer when window regains focus
+      }
+    });
+  }
 
 
 
