@@ -421,7 +421,24 @@ export class ActivityTracker{
     }
   }
 
+  // Save offline cache to VS Code's persistent storage
+  private saveOfflineCache() {
+    this.context.globalState.update('activityTracker.offlineCache', this.offlineCache);
+  }
 
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
 
 }
