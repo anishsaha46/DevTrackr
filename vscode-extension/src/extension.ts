@@ -354,6 +354,15 @@ export class ActivityTracker{
     }
   }
   
+  // Show error message with cooldown to prevent spam
+  private showErrorOnce(message: string) {
+    const now = Date.now();
+    // Only show error if enough time has passed since last error
+    if (now - this.lastErrorTime > this.errorCooldown) {
+      vscode.window.showWarningMessage(message);
+      this.lastErrorTime = now;
+    }
+  }
 
 
 
