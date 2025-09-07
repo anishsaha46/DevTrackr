@@ -606,6 +606,32 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 
+    // Command to configure JWT token
+  const configureTokenCommand = vscode.commands.registerCommand('activity-tracker.configureToken', async () => {
+    const token = await vscode.window.showInputBox({
+      prompt: 'Enter your JWT token for activity tracking',
+      password: true,
+      placeHolder: 'JWT token...'
+    });
+    
+    if (token) {
+      await context.secrets.store('activityTracker.jwtToken', token);
+      vscode.window.showInformationMessage('JWT token saved securely');
+    }
+  });
+
+  // Add all commands and tracker to subscriptions for proper cleanup
+  context.subscriptions.push(startCommand, stopCommand, toggleCommand, configureTokenCommand, tracker);
+
+  // Auto-start tracking if configured in settings
+  const config = vscode.workspace.getConfiguration('activityTracker');
+  const autoStart = config.get<boolean>('autoStart', false);
+  
+  if (autoStart) {
+    tracker.startTracking();
+  }
+}
+
 
 
 }
