@@ -425,20 +425,69 @@ export class ActivityTracker{
   private saveOfflineCache() {
     this.context.globalState.update('activityTracker.offlineCache', this.offlineCache);
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
   
+
+  // Load offline cache from VS Code's persistent storage
+  private loadOfflineCache() {
+    const cached = this.context.globalState.get<QueuedActivity[]>('activityTracker.offlineCache', []);
+    this.offlineCache = cached;
+    console.log(`Loaded ${cached.length} cached activities from offline storage`);
+  }
+
+
+
+  // Public method to start activity tracking
+  public async startTracking() {
+    if (this.isTracking) return;  // Already tracking
+
+    const config = await this.getConfiguration();
+    // Check if JWT token is configured before starting
+    if (!config.jwtToken) {
+      const action = await vscode.window.showWarningMessage(
+        'JWT token not configured. Please set up authentication first.',
+        'Configure Token'
+      );
+      if (action === 'Configure Token') {
+        await this.configureToken();  // Prompt user to configure token
+      }
+      return;
+    }
+
+    // Generate new session ID for this tracking session
+    this.currentSessionId = this.generateSessionId();
+    console.log(`Started new tracking session: ${this.currentSessionId}`);
+
+    // Enable tracking and update UI
+    this.isTracking = true;
+    this.updateStatusBar();
+    
+    // Start tracking current active document if one exists
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor) {
+      this.startFileActivity(activeEditor.document);
+    }
+
+    // Set up periodic sync timer
+    this.syncTimer = setInterval(() => {
+      this.syncActivityData();
+    }, config.syncInterval);
+
+    vscode.window.showInformationMessage('Activity tracking started');
+    
+    // Try to process any previously cached activities
+    await this.processCachedActivities();
+  }
+
+
+
+
+
+
+
+
+
+
+
 
 
 }
