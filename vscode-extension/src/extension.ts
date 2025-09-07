@@ -558,6 +558,28 @@ export class ActivityTracker{
   }
 
 
+    // Clean up resources when extension is deactivated
+  public async dispose() {
+    // Perform final sync before disposal
+    if (this.isTracking) {
+      await this.syncActivityData();
+      // Clean shutdown without calling stopTracking (avoid double sync)
+      this.isTracking = false;
+      if (this.syncTimer) {
+        clearInterval(this.syncTimer);
+        this.syncTimer = null;
+      }
+    } else {
+      // Just ensure any remaining activities are synced
+      await this.syncActivityData();
+    }
+    
+    // Clean up VS Code resources
+    this.statusBarItem.dispose();
+    this.saveOfflineCache();  // Persist any remaining cached data
+  }
+}
+
 
 
 
