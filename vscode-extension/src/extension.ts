@@ -478,7 +478,27 @@ export class ActivityTracker{
     await this.processCachedActivities();
   }
 
+  // Public method to stop activity tracking
+  public async stopTracking() {
+    if (!this.isTracking) return;  // Not currently tracking
 
+    // Disable tracking and clean up
+    this.isTracking = false;
+    this.stopCurrentActivity();      // Stop tracking current file
+    this.currentActivity = null;     // Clear current activity
+    this.updateStatusBar();          // Update status bar display
+
+    // Clear sync timer
+    if (this.syncTimer) {
+      clearInterval(this.syncTimer);
+      this.syncTimer = null;
+    }
+
+    // Perform final sync before stopping
+    await this.syncActivityData();
+
+    vscode.window.showInformationMessage('Activity tracking stopped');
+  }
 
 
 
