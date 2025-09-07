@@ -363,7 +363,51 @@ export class ActivityTracker{
       this.lastErrorTime = now;
     }
   }
+ 
 
+  // Periodic sync of activity data to server
+  private async syncActivityData() {
+    if (!this.isTracking) return;  // Don't sync if tracking is disabled
+
+    const now = Date.now();
+    
+    // Handle current ongoing activity
+    if (this.currentActivity) {
+      // Check if user has been inactive too long
+      if (now - this.lastActivityTime > this.inactivityThreshold) {
+        console.log('User inactive, stopping current activity');
+        this.currentActivity = null;  // Reset due to inactivity
+      } else {
+        // Update current activity timing
+        this.currentActivity.totalTime += now - this.currentActivity.startTime;
+        this.currentActivity.startTime = now;
+        
+        // Queue current activity if it has meaningful duration
+        if (this.currentActivity.totalTime > 5000) {
+          await this.queueActivity(this.currentActivity);
+          this.currentActivity.totalTime = 0; // Reset after queuing
+        }
+      }
+    }
+
+    // Process any queued activities
+    if (this.activityQueue.length > 0) {
+      const activitiesToSend = [...this.activityQueue];  // Copy queue
+      const success = await this.sendActivityBatch(activitiesToSend);
+      
+      if (success) {
+        // Clear sent activities from queue
+        this.activityQueue = [];
+        // Also try to send any cached offline activities
+        await this.processCachedActivities();
+      } else {
+        // Move failed activities to offline cache for later retry
+        this.offlineCache.push(...activitiesToSend);
+        this.activityQueue = [];
+        this.saveOfflineCache();  // Persist to disk
+      }
+    }
+  }
 
 
 
