@@ -279,6 +279,80 @@ export class ActivityTracker{
     }
   }
 
+  // Send batch of activities to the server
+  private async sendActivityBatch(activities: QueuedActivity[]): Promise<boolean> {
+    if (activities.length === 0) return true;  // Nothing to send
+    
+    try {
+      const config = await this.getConfiguration();
+      
+      // Check if JWT token is configured
+      if (!config.jwtToken) {
+        console.warn('JWT token not configured for Activity Tracker');
+        this.showErrorOnce('JWT token not configured. Please set up authentication.');
+        return false;
+      }
+
+      // Try batch endpoint first (more efficient for multiple activities)
+      const batchEndpoint = config.apiEndpoint.replace('/activities', '/activities/batch');
+      
+      try {
+        // Attempt to send all activities in one batch request
+        const batchResponse = await fetch(batchEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.jwtToken}`  // JWT authentication
+          },
+          body: JSON.stringify(activities)  // Send all activities as JSON array
+        });
+
+        // If batch request successful, we're done
+        if (batchResponse.ok) {
+          console.log(`Successfully sent ${activities.length} activities via batch API`);
+          return true;
+        } else if (batchResponse.status === 404) {
+          // Batch endpoint doesn't exist, fall back to individual requests
+          console.log('Batch endpoint not available, falling back to individual requests');
+        } else {
+          throw new Error(`Batch request failed: ${batchResponse.status}`);
+        }
+      } catch (batchError) {
+        console.log('Batch send failed, trying individual requests:', batchError);
+      }
+
+      // Fallback: Send each activity individually
+      const promises = activities.map(activity => 
+        fetch(config.apiEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.jwtToken}`
+          },
+          body: JSON.stringify(activity)  // Send single activity
+        })
+      );
+
+      // Wait for all individual requests to complete
+      const responses = await Promise.allSettled(promises);
+      const failures = responses.filter(r => r.status === 'rejected' || 
+        (r.status === 'fulfilled' && !r.value.ok));
+
+      // Check if all requests succeeded
+      if (failures.length === 0) {
+        console.log(`Successfully sent ${activities.length} activities individually`);
+        return true;
+      } else {
+        console.error(`Failed to send ${failures.length}/${activities.length} activities`);
+        return false;
+      }
+
+    } catch (error) {
+      console.error('Failed to send activity batch:', error);
+      this.showErrorOnce('Failed to sync activity data to server');
+      return false;
+    }
+  }
   
 
 
