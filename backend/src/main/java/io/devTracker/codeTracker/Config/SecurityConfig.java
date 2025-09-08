@@ -66,6 +66,9 @@ SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             // Permit all requests to auth-related endpoints (login, oauth, etc.)
             .requestMatchers("/api/auth/**", "/login/oauth2/**", "/oauth2/**").permitAll()
             
+            // Permit device auth initiation (no auth required)
+            .requestMatchers("/api/auth/device", "/api/auth/device/status/**").permitAll()
+            
             // All other requests must be authenticated
             .anyRequest().authenticated()
         )
