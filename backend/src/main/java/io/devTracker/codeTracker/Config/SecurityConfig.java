@@ -4,6 +4,7 @@ import io.devTracker.codeTracker.Model.User;
 import io.devTracker.codeTracker.Repository.UserRepository;
 import io.devTracker.codeTracker.Security.JwtUtil;
 import io.devTracker.codeTracker.Security.JwtAuthenticationFilter;
+import io.devTracker.codeTracker.Security.RateLimitingFilter;
 
 // import jakarta.servlet.http.HttpServletRequest;
 // import jakarta.servlet.http.HttpServletResponse;
@@ -49,6 +50,9 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @Autowired
+    private RateLimitingFilter rateLimitingFilter;
+
 @Bean
 SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
@@ -79,6 +83,9 @@ SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             .failureHandler(oAuth2AuthenticationFailureHandler())
         );
 
+    // Add the rate limiting filter before the JWT filter
+    http.addFilterBefore(rateLimitingFilter, JwtAuthenticationFilter.class);
+    
     // Add the JWT filter before the UsernamePasswordAuthenticationFilter
     http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
