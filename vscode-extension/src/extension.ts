@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import fetch from 'node-fetch';
 import * as path from 'path';
 import { scheduler } from 'timers/promises';
 
@@ -445,13 +444,17 @@ export class ActivityTracker{
     // Check if JWT token is configured before starting
     if (!config.jwtToken) {
       const action = await vscode.window.showWarningMessage(
-        'JWT token not configured. Please set up authentication first.',
-        'Configure Token'
+        'Not logged in to CodeTracker. Please log in to start tracking.',
+        'Login'
       );
-      if (action === 'Configure Token') {
-        await this.configureToken();  // Prompt user to configure token
+      if (action === 'Login') {
+        const success = await this.loginWithWeb();
+        if (!success) {
+          return; // Login failed, don't start tracking
+        }
+      } else {
+        return; // User cancelled login
       }
-      return;
     }
 
     // Generate new session ID for this tracking session
@@ -511,19 +514,127 @@ export class ActivityTracker{
   }
 
 
-  // Private method to prompt user for JWT token configuration
-  private async configureToken() {
-    const token = await vscode.window.showInputBox({
-      prompt: 'Enter your JWT token for activity tracking',
-      password: true,  // Hide input for security
-      placeHolder: 'JWT token...'
-    });
-    
-    // Save token to secure storage if provided
-    if (token) {
-      await this.context.secrets.store('activityTracker.jwtToken', token);
-      vscode.window.showInformationMessage('JWT token saved securely');
+  // Public method to login with device authorization flow
+  public async loginWithWeb() {
+    try {
+      const config = await this.getConfiguration();
+      
+      // Get device info
+      const os = require('os');
+      const deviceName = `${os.platform()} - ${os.hostname()}`;
+      const deviceId = `${os.platform()}-${os.hostname()}-${Date.now()}`;
+      
+      // Step 1: Get device code
+      const deviceResponse = await fetch(`${config.apiEndpoint.replace('/activities', '')}/auth/device`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deviceName,
+          deviceType: 'vscode-extension',
+          deviceId
+        })
+      });
+      
+      if (!deviceResponse.ok) {
+        throw new Error(`Failed to initiate device auth: ${deviceResponse.status}`);
+      }
+      
+      const responseData = await deviceResponse.json() as { deviceCode: string; verificationUrl: string; expiresIn: number; interval: number };
+      const { deviceCode, verificationUrl, expiresIn, interval } = responseData;
+      
+      // Step 2: Show user the verification URL
+      const action = await vscode.window.showInformationMessage(
+        'Please complete login in your browser to connect this device',
+        'Open Browser'
+      );
+      
+      if (action === 'Open Browser') {
+        vscode.env.openExternal(vscode.Uri.parse(verificationUrl));
+      }
+      
+      // Step 3: Poll for confirmation with progress
+      const token = await this.pollForTokenWithProgress(deviceCode, interval, expiresIn);
+      
+      if (token) {
+        await this.context.secrets.store('activityTracker.jwtToken', token);
+        vscode.window.showInformationMessage('✅ Successfully logged in to CodeTracker!');
+        return true;
+      }
+      
+      return false;
+      
+    } catch (error) {
+      vscode.window.showErrorMessage('Login failed: ' + (error instanceof Error ? error.message : String(error)));
+      return false;
     }
+  }
+
+  // Poll for token with progress indicator
+  private async pollForTokenWithProgress(deviceCode: string, interval: number, expiresIn: number): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      const maxWaitTime = expiresIn * 1000;
+      
+      // Show progress
+      vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: "Waiting for login confirmation...",
+        cancellable: true
+      }, async (progress, token) => {
+        let pollCount = 0;
+        
+        const poll = async () => {
+          if (token.isCancellationRequested) {
+            reject(new Error('Login cancelled by user'));
+            return;
+          }
+          
+          if (Date.now() - startTime > maxWaitTime) {
+            reject(new Error('Device authorization expired. Please try again.'));
+            return;
+          }
+          
+          try {
+            const config = await this.getConfiguration();
+            const response = await fetch(`${config.apiEndpoint.replace('/activities', '')}/auth/device/confirm`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ deviceCode })
+            });
+            
+            if (response.ok) {
+              const responseData = await response.json() as { accessToken: string };
+              resolve(responseData.accessToken);
+              return;
+            }
+            
+            // Update progress
+            pollCount++;
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const remaining = Math.max(0, expiresIn - elapsed);
+            progress.report({ 
+              message: `Waiting for confirmation... (${remaining}s remaining)`,
+              increment: 10 
+            });
+            
+            // Wait before next poll
+            setTimeout(poll, interval * 1000);
+            
+          } catch (error) {
+            console.error('Polling error:', error);
+            setTimeout(poll, interval * 1000);
+          }
+        };
+        
+        poll();
+      });
+    });
+  }
+
+  // Public method to logout (clear stored token)
+  public async logout() {
+    await this.context.secrets.delete('activityTracker.jwtToken');
+    vscode.window.showInformationMessage('Logged out from CodeTracker');
   }
 
 
@@ -604,24 +715,18 @@ export function activate(context: vscode.ExtensionContext) {
     tracker.toggleTracking();
   });
 
+  // Command to login with device authorization
+  const loginCommand = vscode.commands.registerCommand('activity-tracker.login', async () => {
+    await tracker.loginWithWeb();
+  });
 
-
-    // Command to configure JWT token
-  const configureTokenCommand = vscode.commands.registerCommand('activity-tracker.configureToken', async () => {
-    const token = await vscode.window.showInputBox({
-      prompt: 'Enter your JWT token for activity tracking',
-      password: true,
-      placeHolder: 'JWT token...'
-    });
-    
-    if (token) {
-      await context.secrets.store('activityTracker.jwtToken', token);
-      vscode.window.showInformationMessage('JWT token saved securely');
-    }
+  // Command to logout
+  const logoutCommand = vscode.commands.registerCommand('activity-tracker.logout', async () => {
+    await tracker.logout();
   });
 
   // Add all commands and tracker to subscriptions for proper cleanup
-  context.subscriptions.push(startCommand, stopCommand, toggleCommand, configureTokenCommand, tracker);
+  context.subscriptions.push(startCommand, stopCommand, toggleCommand, loginCommand, logoutCommand, tracker);
 
   // Auto-start tracking if configured in settings
   const config = vscode.workspace.getConfiguration('activityTracker');
