@@ -17,7 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-public class RateLimitingFilter {
+public class RateLimitingFilter extends OncePerRequestFilter {
     
     @Autowired
     private RateLimitService rateLimitService;
@@ -40,5 +40,41 @@ public class RateLimitingFilter {
         }
         return "ip:" + ip;
     }
+
+@Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+
+        // Skip rate limiting for non-API requests
+        String path = request.getRequestURI();
+        if (!path.startsWith("/api/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Get user ID from authentication or use IP address
+        String key = getUserIdentifier(request);
+        String endpoint = request.getMethod() + ":" + path;
+
+        // Get the appropriate bucket for this user and endpoint
+        Bucket bucket = rateLimitService.resolveBucket(key, endpoint);
+
+        // Try to consume a token from the bucket
+        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+
+        if (probe.isConsumed()) {
+            // Request allowed, add rate limit headers
+            response.addHeader("X-Rate-Limit-Remaining", String.valueOf(probe.getRemainingTokens()));
+            response.addHeader("X-Rate-Limit-Limit", String.valueOf(bucket.getAvailableTokens()));
+            filterChain.doFilter(request, response);
+        } else {
+            // Rate limit exceeded
+            response.setStatus(429); // HTTP 429 Too Many Requests
+            response.addHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(probe.getNanosToWaitForRefill() / 1_000_000_000));
+            response.getWriter().write("Rate limit exceeded. Please try again later.");
+        }
+    }
+
+
 
 }
