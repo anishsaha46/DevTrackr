@@ -23,6 +23,16 @@
   "contributes": {
     "commands": [
       {
+        "command": "activity-tracker.login",
+        "title": "Login to CodeTracker",
+        "category": "Activity Tracker"
+      },
+      {
+        "command": "activity-tracker.logout",
+        "title": "Logout",
+        "category": "Activity Tracker"
+      },
+      {
         "command": "activity-tracker.startTracking",
         "title": "Start Tracking",
         "category": "Activity Tracker"
@@ -35,11 +45,6 @@
       {
         "command": "activity-tracker.toggleTracking",
         "title": "Toggle Tracking",
-        "category": "Activity Tracker"
-      },
-      {
-        "command": "activity-tracker.configureToken",
-        "title": "Configure JWT Token",
         "category": "Activity Tracker"
       }
     ],
@@ -60,11 +65,6 @@
           "type": "number",
           "default": 60,
           "description": "Interval in seconds to sync activity data"
-        },
-        "activityTracker.jwtToken": {
-          "type": "string",
-          "default": "",
-          "description": "JWT token for API authentication (will be migrated to secure storage)"
         },
         "activityTracker.autoStart": {
           "type": "boolean",
