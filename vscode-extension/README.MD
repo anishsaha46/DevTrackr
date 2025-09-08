@@ -28,20 +28,13 @@ npm install
 
 ### 2. Configure the Extension
 
-#### Option A: Secure Token Setup (Recommended)
-
-1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
-2. Type "Activity Tracker: Configure JWT Token"
-3. Enter your JWT token (stored securely in VS Code's encrypted storage)
-
-#### Option B: Settings Configuration
+### Configuration
 
 Open VS Code settings (`Ctrl+,` or `Cmd+,`) and search for "Activity Tracker":
 
 - **API Endpoint**: Your backend API URL (default: `http://localhost:8080/api/activities`)
 - **Project ID**: Identifier for your project (auto-detected from workspace folder)
 - **Sync Interval**: How often to send data in seconds (default: `60`)
-- **JWT Token**: Your authentication token (will be migrated to secure storage)
 - **Auto Start**: Automatically start tracking when VS Code opens
 
 Alternatively, add these to your `settings.json`:
@@ -53,6 +46,8 @@ Alternatively, add these to your `settings.json`:
   "activityTracker.autoStart": true
 }
 ```
+
+**Note**: Authentication is now handled automatically through the device authorization flow. No manual token configuration is required!
 
 ### 3. Build and Package
 
@@ -73,17 +68,21 @@ code --install-extension activity-tracker-1.0.0.vsix
 
 ## Usage
 
-### Starting/Stopping Tracking
+### Getting Started
 
-1. **Via Command Palette** (`Ctrl+Shift+P` or `Cmd+Shift+P`):
-   - Type "Start Tracking" to begin activity monitoring
-   - Type "Stop Tracking" to stop activity monitoring
-   - Type "Toggle Tracking" to switch tracking state
-   - Type "Configure JWT Token" to set up secure authentication
+1. **Login** (First time setup):
+   - Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+   - Type "CodeTracker: Login to CodeTracker"
+   - Complete the login process in your browser
+   - The extension will automatically receive your authentication token
 
-2. **Via Status Bar** (Right side):
-   - **Click** the status bar item to toggle tracking on/off
+2. **Starting/Stopping Tracking**:
+   - **Via Command Palette**: Type "Start Tracking", "Stop Tracking", or "Toggle Tracking"
+   - **Via Status Bar**: Click the status bar item to toggle tracking on/off
    - Icons: `$(pulse)` when active, `$(circle-outline)` when inactive
+
+3. **Logout**:
+   - Use "CodeTracker: Logout" command to disconnect from your account
 
 ### Smart Features
 
