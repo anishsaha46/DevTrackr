@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class RateLimitService{
+public class RateLimitService {
 
     // Toggle to enable/disable rate limiting via configuration
     @Value("${rate-limit.enabled:true}")
@@ -59,8 +59,8 @@ public class RateLimitService{
     @Value("${rate-limit.auth-device-confirm.refill-period:60}")
     private int authDeviceConfirmRefillPeriod;
 
-
-    private final Map<String,Bucket> buckets = new ConcurrentHashMap<>();
+    // A concurrent map to store and retrieve rate limit buckets for each (user + endpoint) combination
+    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     /**
      * Resolves (or creates) a rate limit bucket for a user and a specific endpoint.
@@ -83,4 +83,85 @@ public class RateLimitService{
     }
 
 
+
+    /**
+     * Creates a new rate limiting bucket based on the endpoint being accessed.
+     * Each endpoint has specific rate limit settings.
+     *
+     * @param endpoint API endpoint string
+     * @return Configured Bucket instance
+     */
+
+    private Bucket createNewBucket(String endpoint) {
+        Bandwidth limit;
+
+        // Define rate limits based on endpoint pattern matching
+
+        if (endpoint.startsWith("/api/activity") && endpoint.endsWith("/batch")) {
+            // Batch activity posting
+            limit = Bandwidth.classic(
+                activitiesBatchCapacity,
+                Refill.intervally(activitiesBatchCapacity, Duration.ofSeconds(activitiesBatchRefillPeriod))
+            );
+
+        } else if (endpoint.startsWith("/api/activity") && endpoint.contains("POST")) {
+            // Individual activity posting
+            limit = Bandwidth.classic(
+                activitiesCapacity,
+                Refill.intervally(activitiesCapacity, Duration.ofSeconds(activitiesRefillPeriod))
+            );
+
+        } else if (endpoint.startsWith("/api/activity") && endpoint.contains("GET")) {
+            // Fetching activities
+            limit = Bandwidth.classic(
+                activitiesGetCapacity,
+                Refill.intervally(activitiesGetCapacity, Duration.ofSeconds(activitiesGetRefillPeriod))
+            );
+
+        } else if (endpoint.startsWith("/api/projects") && endpoint.contains("activities")) {
+            // Accessing project-related activities
+            limit = Bandwidth.classic(
+                projectsActivitiesCapacity,
+                Refill.intervally(projectsActivitiesCapacity, Duration.ofSeconds(projectsActivitiesRefillPeriod))
+            );
+
+        } else if (endpoint.startsWith("/api/projects")) {
+            // General project operations
+            limit = Bandwidth.classic(
+                projectsCapacity,
+                Refill.intervally(projectsCapacity, Duration.ofSeconds(projectsRefillPeriod))
+            );
+
+        } else if (endpoint.startsWith("/api/overview")) {
+            // Dashboard or overview-related data
+            limit = Bandwidth.classic(
+                overviewCapacity,
+                Refill.intervally(overviewCapacity, Duration.ofSeconds(overviewRefillPeriod))
+            );
+
+        } else if (endpoint.startsWith("/api/auth/device") && !endpoint.contains("confirm")) {
+            // Authentication using a device
+            limit = Bandwidth.classic(
+                authDeviceCapacity,
+                Refill.intervally(authDeviceCapacity, Duration.ofSeconds(authDeviceRefillPeriod))
+            );
+
+        } else if (endpoint.startsWith("/api/auth/device/confirm")) {
+            // Confirming device authentication
+            limit = Bandwidth.classic(
+                authDeviceConfirmCapacity,
+                Refill.intervally(authDeviceConfirmCapacity, Duration.ofSeconds(authDeviceConfirmRefillPeriod))
+            );
+            
+        } else {
+            // Default fallback rate limit for unspecified endpoints
+            limit = Bandwidth.classic(
+                30,
+                Refill.intervally(30, Duration.ofSeconds(60))
+            );
+        }
+
+        // Build and return the rate limit bucket
+        return Bucket.builder().addLimit(limit).build();
+    }
 }
