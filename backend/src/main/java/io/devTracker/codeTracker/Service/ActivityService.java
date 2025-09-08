@@ -32,7 +32,7 @@ public class ActivityService {
 
     public List<Activity> submitBatchActivities(List<ActivityDTO.ActivityRequest> activityRequests, User user) {
         List<Activity> activities = activityRequests.stream()
-                .map(a -> Activity.builder()
+                .<Activity>map(a -> Activity.builder()
                         .userId(user.getId())
                         .projectName(a.projectName())
                         .language(a.language())
@@ -44,6 +44,22 @@ public class ActivityService {
                         .fileExtension(a.fileExtension())
                         .build())
                 .collect(Collectors.toList());
+        // Basic server-side validation: ensure reasonable time range and drift
+        long now = System.currentTimeMillis();
+        long maxDriftMs = 5 * 60 * 1000L; // ±5 minutes
+        activities.forEach(act -> {
+            if (act.getTimeSpent() == null || act.getTimeSpent() < 1 || act.getTimeSpent() > 8 * 60 * 60) {
+                throw new IllegalArgumentException("Invalid timeSpent");
+            }
+            if (act.getStartTime() == null || act.getEndTime() == null || act.getEndTime().before(act.getStartTime())) {
+                throw new IllegalArgumentException("Invalid time range");
+            }
+            long startMs = act.getStartTime().getTime();
+            long endMs = act.getEndTime().getTime();
+            if (Math.abs(startMs - now) > maxDriftMs || Math.abs(endMs - now) > maxDriftMs) {
+                throw new IllegalArgumentException("Timestamp drift too large");
+            }
+        });
         return activityRepository.saveAll(activities);
     }
 
