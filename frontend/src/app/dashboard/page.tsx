@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { getCurrentUser,getUserProjects,getUserActivities,getActivitySummary,getActivityHeatmap,getActivityTimeline } from "../lib/api";
 import { Skeleton } from "../components/ui/skeleton";
 import { Avatar,AvatarFallback,AvatarImage } from "../components/ui/avatar";
-import { CalendarIcon, ClockIcon, CodeIcon, FolderIcon, GitBranchIcon, UserIcon } from "lucide-react";
+import { CalendarIcon, ClockIcon, CodeIcon, FolderIcon, GitBranchIcon, UserIcon, Monitor } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 
 
@@ -168,12 +168,13 @@ export default function DashboardPage() {
 
       {/* Main dashboard content */}
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
+          <TabsTrigger value="devices">Devices</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -485,6 +486,28 @@ export default function DashboardPage() {
                   No heatmap data available. Start coding to see your activity heatmap.
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Devices Tab */}
+        <TabsContent value="devices" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Connected Devices</CardTitle>
+              <CardDescription>Manage devices that can track your coding activities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Monitor className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Device Management</h3>
+                <p className="text-muted-foreground mb-4">
+                  View and manage all your connected devices from the dedicated devices page.
+                </p>
+                <Button onClick={() => window.open('/devices', '_blank')}>
+                  Open Device Management
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
