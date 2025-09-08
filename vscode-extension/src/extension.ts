@@ -525,7 +525,12 @@ export class ActivityTracker{
       const deviceId = `${os.platform()}-${os.hostname()}-${Date.now()}`;
       
       // Step 1: Get device code
-      const deviceResponse = await fetch(`${config.apiEndpoint.replace('/activities', '')}/auth/device`, {
+      // Enforce HTTPS in production-like usage
+      const baseUrl = `${config.apiEndpoint.replace('/activities', '')}`;
+      if (!baseUrl.startsWith('https://')) {
+        this.showErrorOnce('Warning: Non-HTTPS endpoint detected. Use HTTPS in production.');
+      }
+      const deviceResponse = await fetch(`${baseUrl}/auth/device`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
