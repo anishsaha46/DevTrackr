@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,10 @@ public class ActivityService {
     @Autowired
     private ActivityRepository activityRepository;
 
+
+    @CacheEvict(value = {"overview", "projectActivities", "heatmap"}, 
+               key = "#user.id", 
+               condition = "#activityRequests != null && !#activityRequests.isEmpty()")
     public List<Activity> submitActivities(List<ActivityDTO.ActivityRequest> activityRequests, User user) {
         List<Activity> activities = activityRequests.stream()
                 .map(a -> Activity.builder()
@@ -30,6 +37,10 @@ public class ActivityService {
         return activityRepository.saveAll(activities);
     }
 
+
+    @CacheEvict(value = {"overview", "projectActivities", "heatmap"}, 
+               key = "#user.id", 
+               condition = "#activityRequests != null && !#activityRequests.isEmpty()")
     public List<Activity> submitBatchActivities(List<ActivityDTO.ActivityRequest> activityRequests, User user) {
         List<Activity> activities = activityRequests.stream()
                 .<Activity>map(a -> Activity.builder()
@@ -82,7 +93,7 @@ public class ActivityService {
     }
 
 
-
+    @Cacheable(value = "projectActivities", key = "#userId + '-' + #projectName")
     public List<Activity> findActivities(String userId, String projectName, Date from, Date to) {
         if (projectName != null && from != null && to != null) {
             return activityRepository.findByUserIdAndProjectNameAndStartTimeBetween(userId, projectName, from, to);
