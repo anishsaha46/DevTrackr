@@ -6,6 +6,7 @@ import io.devTracker.codeTracker.Repository.ActivityRepository;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -115,6 +116,7 @@ public class ReportController {
     * @return a list of HeatmapEntry objects, each containing a date and the corresponding activity level
     */
     @GetMapping("/heatmap")
+    @Cacheable(value = "heatmap", key = "#user.id + '-' + #year")
     public List<HeatmapEntry> getHeatmap(@RequestParam int year, @AuthenticationPrincipal User user) {
         // Define date range: Jan 1 to Dec 31 of the given year
         LocalDate startOfYear = LocalDate.of(year, 1, 1);
