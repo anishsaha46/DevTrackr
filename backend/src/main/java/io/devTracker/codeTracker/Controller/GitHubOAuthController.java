@@ -6,6 +6,7 @@ import io.devTracker.codeTracker.Model.User;
 import io.devTracker.codeTracker.Dto.UserDTO;
 import io.devTracker.codeTracker.Service.AuthService;
 import io.devTracker.codeTracker.Service.GitHubService;
+import io.devTracker.codeTracker.Service.GitHubCacheService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,9 @@ public class GitHubOAuthController {
 
     @Autowired
     private GitHubService githubService;
+    
+    @Autowired
+    private GitHubCacheService githubCacheService;
 
     @Autowired
     private AuthService authService;
@@ -31,8 +35,8 @@ public class GitHubOAuthController {
             // Exchange authorization code for access token
             String accessToken = githubService.exchangeCodeForToken(request.getCode());
             
-            // Get user info from GitHub
-            Map<String, Object> githubUser = githubService.getUserInfo(accessToken);
+            // Get user info from GitHub (using cached service)
+            Map<String, Object> githubUser = githubCacheService.getCachedUserInfo(accessToken);
             
             // Extract user details
             String email = (String) githubUser.get("email");
