@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import io.devTracker.codeTracker.Model.Project;
@@ -23,6 +25,8 @@ public class ProjectService {
      * @param userId the ID of the user creating the project
      * @return the created Project entity
      */
+
+     @CacheEvict(value={"projects","overview"},key="#userId")
     public Project createProject(String name,String userId){
         Project project = Project.builder()
             .name(name)
@@ -37,6 +41,8 @@ public class ProjectService {
      * @param user the ID of the user
      * @return a list of Project entities
      */
+
+     @Cacheable(value="projects",key="#user.id")
     public List<Project> getProjectByUserId(User user){
         return projectRepository.findByUserId(user.getId());
     }
@@ -49,12 +55,12 @@ public class ProjectService {
      * @param user the user requesting the project
      * @return an Optional containing the Project entity if found, or empty if not found or access is denied
      */
+
+    @Cacheable(value = "projects", key = "#projectId + '-' + #user.id")
     public Optional<Project> getProjectById(String projectId, User user) {
         return projectRepository.findById(projectId)
                 .filter(project -> project.getUserId().equals(user.getId()));
     }
-
-
 
 
     /**
@@ -66,6 +72,7 @@ public class ProjectService {
      * @return an Optional containing the updated Project entity if found, or empty if not found or access is denied
      */
 
+    @CacheEvict(value = {"projects", "overview"}, key = "#user.id")
     public Optional<Project> updateProject(String projectId, String name, User user) {
         return projectRepository.findById(projectId)
                 .map(project -> {
