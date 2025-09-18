@@ -11,16 +11,22 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import org.springframework.core.Ordered;
+public class RateLimitingFilter extends OncePerRequestFilter implements Ordered {
 
-@Component
-public class RateLimitingFilter extends OncePerRequestFilter {
-    
-    @Autowired
-    private RateLimitService rateLimitService;
+    private final RateLimitService rateLimitService;
+
+    public RateLimitingFilter(RateLimitService rateLimitService) {
+        this.rateLimitService = rateLimitService;
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
+    }
 
     /**
      * Get a unique identifier for the current user
