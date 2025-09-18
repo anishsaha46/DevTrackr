@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import fetch from 'node-fetch';
 import { scheduler } from 'timers/promises';
 
 // Interface defining the structure of activity data sent to the server
@@ -62,30 +63,27 @@ export class ActivityTracker{
 
 
 
-  // Get configuration settings from VS Code settings and secure storage
-  private async getConfiguration() {
-    const config = vscode.workspace.getConfiguration('activityTracker');
-    
-    // Try to get JWT token from secure storage first (recommended)
-    let jwtToken = await this.context.secrets.get('activityTracker.jwtToken');
-    if (!jwtToken) {
-      // Fallback to old settings location
-      jwtToken = config.get<string>('jwtToken', '');
-      // If found in settings, migrate to secure storage for better security
-      if (jwtToken) {
-        await this.context.secrets.store('activityTracker.jwtToken', jwtToken);
-        // Remove from settings to avoid storing sensitive data in plain text
-        await config.update('jwtToken', undefined, vscode.ConfigurationTarget.Global);
-      }
+// Get configuration settings from VS Code settings and secure storage
+private async getConfiguration() {
+  const config = vscode.workspace.getConfiguration('activityTracker');
+  
+  let jwtToken = await this.context.secrets.get('activityTracker.jwtToken');
+  if (!jwtToken) {
+    jwtToken = config.get<string>('jwtToken', '');
+    if (jwtToken) {
+      await this.context.secrets.store('activityTracker.jwtToken', jwtToken);
+      await config.update('jwtToken', undefined, vscode.ConfigurationTarget.Global);
     }
-    // Return configuration object with all needed settings
-    return {
-      apiEndpoint: config.get<string>('apiEndpoint', 'http://localhost:8080/api/activities'),
-      projectId: this.detectProjectId(),
-      syncInterval: config.get<number>('syncInterval', 60) * 1000, // Convert minutes to milliseconds
-      jwtToken: jwtToken || ''
-    };
   }
+  
+  return {
+    apiEndpoint: config.get<string>('apiEndpoint', 'http://localhost:8080/api/activities'),
+    authEndpoint: config.get<string>('authEndpoint', 'http://localhost:8080/api/auth'),
+    projectId: this.detectProjectId(),
+    syncInterval: config.get<number>('syncInterval', 60) * 1000,
+    jwtToken: jwtToken || ''
+  };
+}
 
   // Determine the project ID based on the current workspace
   // Determine the project ID based on the current workspace
@@ -437,25 +435,58 @@ export class ActivityTracker{
 
 
   // Public method to start activity tracking
-  public async startTracking() {
-    if (this.isTracking) return;  // Already tracking
+public async startTracking() {
+  if (this.isTracking) return;  // Already tracking
 
-    const config = await this.getConfiguration();
-    // Check if JWT token is configured before starting
-    if (!config.jwtToken) {
+  let config = await this.getConfiguration();
+  
+  // Check if JWT token exists
+  if (!config.jwtToken) {
+    const action = await vscode.window.showWarningMessage(
+      'Not logged in to CodeTracker. Please log in to start tracking.',
+      'Login'
+    );
+    if (action === 'Login') {
+      const success = await this.loginWithWeb();
+      if (!success) {
+        return; // Login failed, don't start tracking
+      }
+      config = await this.getConfiguration();
+    } else {
+      return; // User cancelled login
+    }
+  }
+
+  // Validate the token only when needed
+  try {
+    const validationResponse = await fetch(`${config.authEndpoint}/validate`, {
+      headers: {
+        'Authorization': `Bearer ${config.jwtToken}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!validationResponse.ok) {
+      await this.context.secrets.delete('activityTracker.jwtToken');
       const action = await vscode.window.showWarningMessage(
-        'Not logged in to CodeTracker. Please log in to start tracking.',
+        'Your session has expired. Please log in again.',
         'Login'
       );
       if (action === 'Login') {
         const success = await this.loginWithWeb();
         if (!success) {
-          return; // Login failed, don't start tracking
+          return;
         }
+        config = await this.getConfiguration();
       } else {
-        return; // User cancelled login
+        return;
       }
     }
+  } catch (error) {
+    console.error('Token validation error:', error);
+    vscode.window.showErrorMessage('Failed to validate authentication. Please check your connection.');
+    return;
+  }
 
     // Generate new session ID for this tracking session
     this.currentSessionId = this.generateSessionId();
@@ -561,6 +592,7 @@ export class ActivityTracker{
       const token = await this.pollForTokenWithProgress(deviceCode, interval, expiresIn);
       
       if (token) {
+        console.log('Device login: received token:', token);
         await this.context.secrets.store('activityTracker.jwtToken', token);
         vscode.window.showInformationMessage('✅ Successfully logged in to CodeTracker!');
         return true;
@@ -575,51 +607,63 @@ export class ActivityTracker{
   }
 
   // Poll for token with progress indicator
-  private async pollForTokenWithProgress(deviceCode: string, interval: number, expiresIn: number): Promise<string | null> {
+private async pollForTokenWithProgress(deviceCode: string, interval: number, expiresIn: number): Promise<string | null> {
     return new Promise((resolve, reject) => {
       const startTime = Date.now();
       const maxWaitTime = expiresIn * 1000;
-      
-      // Show progress
+  
       vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: "Waiting for login confirmation...",
         cancellable: true
-      }, async (progress, token) => {
-        let pollCount = 0;
+      }, async (progress, cancellationToken) => {
         
         const poll = async () => {
-          if (token.isCancellationRequested) {
+          if (cancellationToken.isCancellationRequested) {
             reject(new Error('Login cancelled by user'));
             return;
           }
-          
+  
           if (Date.now() - startTime > maxWaitTime) {
             reject(new Error('Device authorization expired. Please try again.'));
             return;
           }
-          
+  
           try {
             const config = await this.getConfiguration();
-            const response = await fetch(`${config.apiEndpoint.replace('/activities', '')}/auth/device/confirm`, {
+            const response = await fetch(`${config.apiEndpoint.replace('/activities', '')}/auth/device/token`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ deviceCode })
             });
             
-            if (response.ok) {
-              const responseData = await response.json() as { accessToken: string };
-              resolve(responseData.accessToken);
+            // --- Start of Fix ---
+            // Explicitly check for 200 OK for success
+            if (response.status === 200) {
+              const responseData = await response.json();
+              const token = responseData.accessToken || responseData.token;
+              if (token) {
+                resolve(token); // Success! Resolve with the token.
+                return;
+              }
+            }
+  
+            // Check for 202 Accepted to continue polling
+            if (response.status === 202) {
+              // This is the "pending" state, so we continue.
+            } else if (!response.ok) {
+              // For any other error (4xx, 5xx), stop and reject.
+              const errorData = await response.json().catch(() => ({}));
+              reject(new Error(errorData.error || `Polling failed with status: ${response.status}`));
               return;
             }
+            // --- End of Fix ---
             
             // Update progress
-            pollCount++;
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
             const remaining = Math.max(0, expiresIn - elapsed);
             progress.report({ 
               message: `Waiting for confirmation... (${remaining}s remaining)`,
-              increment: 10 
             });
             
             // Wait before next poll
@@ -627,6 +671,7 @@ export class ActivityTracker{
             
           } catch (error) {
             console.error('Polling error:', error);
+            // Don't reject on network errors, just keep trying
             setTimeout(poll, interval * 1000);
           }
         };
