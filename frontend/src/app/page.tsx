@@ -1,103 +1,101 @@
-import Image from "next/image";
 
-export default function Home() {
+"use client";
+import { CardContent,CardHeader,CardTitle,CardFooter,Card } from "./components/ui/card";
+import { useEffect,useState,useMemo } from "react";
+import { apiFetch } from "./lib/api-client";
+import { toast } from "sonner";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+
+
+type Overview = {
+  totalProjects: number;
+  totalActivities: number;
+  recentProject?: { id: string; name: string; createdAt: string } | null;
+  recentActivity?: { id: string; name: string; createdAt: string } | null;
+  weekActivityCount: number;
+  monthActivityCount: number;
+};
+
+type Activity = { startTime: string; endTime: string; projectName: string; language: string; };
+
+export default function Dashboard() {
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [recent, setRecent] = useState<Activity[]>([]);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const ov = await apiFetch<Overview>(`/overview`);
+        setOverview(ov || null);
+        const page = await apiFetch<{ content: Activity[] }>(`/activities/page?page=0&size=50`);
+        setRecent(page?.content || []);
+      } catch (e:any) {
+        toast.error(e.message || "Failed to load dashboard");
+      }
+    };
+    fetchAll();
+  }, []);
+
+  const chartData = useMemo(() => {
+    const map = new Map<string, number>();
+    recent.forEach(a => {
+      const day = new Date(a.startTime).toLocaleDateString();
+      const dur = Math.max(0, (new Date(a.endTime).getTime()-new Date(a.startTime).getTime())/3600000);
+      map.set(day, (map.get(day) || 0) + dur);
+    });
+    return Array.from(map.entries()).map(([day, hours]) => ({ day, hours }));
+  }, [recent]);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="grid gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card><CardHeader><CardTitle>Total Projects</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{overview?.totalProjects ?? "–"}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Total Activities</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{overview?.totalActivities ?? "–"}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Active This Week</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{overview?.weekActivityCount ?? "–"}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Active This Month</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{overview?.monthActivityCount ?? "–"}</CardContent></Card>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <Card>
+        <CardHeader><CardTitle>Activity (Hours by Day)</CardTitle></CardHeader>
+        <CardContent className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip />
+              <Line type="monotone" dataKey="hours" stroke="#2563eb" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Recent Activities</CardTitle></CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-muted-foreground">
+                <tr><th className="py-2">Date</th><th>Project</th><th>Language</th><th>Duration</th></tr>
+              </thead>
+              <tbody>
+                {recent.slice(0,5).map((a, idx) => (
+                  <tr key={`${a.startTime}-${idx}`} className="border-t">
+                    <td className="py-2">{new Date(a.startTime).toLocaleString()}</td>
+                    <td>{a.projectName}</td>
+                    <td>{a.language}</td>
+                    <td>{Math.max(0, (new Date(a.endTime).getTime()-new Date(a.startTime).getTime())/3600000).toFixed(2)} h</td>
+                  </tr>
+                ))}
+                {recent.length === 0 && (
+                  <tr><td className="py-4 text-muted-foreground" colSpan={4}>No recent activities</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
