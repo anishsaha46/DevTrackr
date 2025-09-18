@@ -40,6 +40,29 @@ public class DeviceAuthController {
         }
     }
     
+    @PostMapping("/token")
+    public ResponseEntity<?> devicePollForToken(@RequestBody DeviceConfirmRequest request) {
+    try {
+        DeviceConfirmResponse response = deviceAuthService.devicePollForToken(request.getDeviceCode());
+        if (response == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Device code not found or expired"));
+        }
+        if (response.getAccessToken() == null) {
+            // Not yet approved
+            return ResponseEntity.status(HttpStatus.ACCEPTED)
+                    .body(Map.of("status", "pending"));
+        }
+        // Approved: Return JWT token
+        return ResponseEntity.ok(Map.of("accessToken", response.getAccessToken()));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage()));
+    }
+}
+
+
+
     /**
      * Confirm device authorization (called by web app after user login)
      * POST /api/auth/device/confirm
@@ -61,6 +84,8 @@ public class DeviceAuthController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
+
+
     
     /**
      * Get device status for polling
