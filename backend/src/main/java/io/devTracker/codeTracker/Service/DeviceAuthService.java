@@ -128,6 +128,51 @@ public class DeviceAuthService {
                 .deviceId(device.getDeviceId())
                 .build();
     }
+
+
+    public DeviceConfirmResponse devicePollForToken(String deviceCode) {
+        Optional<Device> deviceOpt = deviceRepository.findByDeviceCode(deviceCode);
+    
+        if (deviceOpt.isEmpty()) {
+            return null;
+        }
+    
+        Device device = deviceOpt.get();
+    
+        // Check if expired
+        if (device.getExpiresAt().before(new Date())) {
+            device.setStatus("expired");
+            deviceRepository.save(device);
+            return null;
+        }
+    
+        // Only issue token if device is approved
+        if (!"approved".equals(device.getStatus())) {
+            return DeviceConfirmResponse.builder()
+                    .accessToken(null)
+                    .deviceId(device.getDeviceId())
+                    .user(null)
+                    .build();
+        }
+    
+        // Get user from repository
+        Optional<User> userOpt = UserRepository.findById(device.getUserId());
+        if (userOpt.isEmpty()) {
+            return null; // Can't find user for approved device
+        }
+        User user = userOpt.get();
+    
+        // Generate JWT token as usual
+        String accessToken = jwtUtil.generateToken(user.getId(), user.getEmail());
+    
+        return DeviceConfirmResponse.builder()
+                .accessToken(accessToken)
+                .user(new UserDTO(user))
+                .deviceId(device.getDeviceId())
+                .build();
+    }
+    
+
     
     /**
      * Get device status for polling
