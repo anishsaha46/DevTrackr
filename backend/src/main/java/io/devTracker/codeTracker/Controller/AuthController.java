@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.Optional;
@@ -17,12 +20,31 @@ import io.devTracker.codeTracker.Service.AuthService;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
- // Logger instance for logging information, warnings, or errors
+    // Logger instance for logging information, warnings, or errors
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     // Dependency injection of the AuthService to handle authentication-related logic
     @Autowired
     public AuthService authService;
+
+    // Token validation endpoint
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication != null && authentication.isAuthenticated() && 
+            !(authentication instanceof AnonymousAuthenticationToken)) {
+            return ResponseEntity.ok().body(Map.of(
+                "valid", true,
+                "username", authentication.getName()
+            ));
+        }
+        
+        return ResponseEntity.status(401).body(Map.of(
+            "valid", false,
+            "message", "Invalid or expired token"
+        ));
+    }
 
     // Endpoint for user registration: POST /api/auth/register
     @PostMapping("/register")
@@ -43,7 +65,7 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-// Endpoint for user login: POST /api/auth/login
+    // Endpoint for user login: POST /api/auth/login
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserDTO.loginRequest req) {
         // Logging the incoming login request
