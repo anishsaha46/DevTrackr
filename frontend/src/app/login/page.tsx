@@ -4,9 +4,9 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { login } from "../lib/api";
-
+import { setAuthToken } from "../lib/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +24,13 @@ export default function LoginPage() {
     try {
       const data = await login(email, password);
       if (data.token) {
-        if (rememberMe) {
-          localStorage.setItem("token", data.token);
-        } else {
-          sessionStorage.setItem("token", data.token);
-        }
-        router.push("/dashboard");
+        setAuthToken(data.token, rememberMe);
+        
+        // Check if there is a redirect parameter in the URL
+        const redirectUrl = searchParams.get('redirect');
+        
+        // If there is, push to that URL. Otherwise, go to the dashboard.
+        router.push(redirectUrl || "/dashboard");
       } else {
         setError("No token received");
       }
