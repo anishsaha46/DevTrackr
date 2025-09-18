@@ -1,3 +1,5 @@
+import { getAuthToken, clearAuthToken } from './auth';
+
 // Define the base URL for API calls.
 export const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
@@ -10,8 +12,8 @@ export const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080
  * @returns A promise resolving to the parsed JSON response or undefined
  */
 export async function apiFetch<T = any>(path: string, init: RequestInit = {}): Promise<T | undefined> {
-  // Get the auth token from localStorage (only if running in browser)
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  // Get the auth token using our centralized function
+  const token = getAuthToken();
 
   // Prepare request headers by spreading any custom headers passed in `init`
   const headers: Record<string, string> = {
