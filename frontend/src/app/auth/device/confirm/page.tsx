@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
+import { getAuthToken } from "@/app/lib/auth";
 
 type Status = 'loading' | 'success' | 'error' | 'expired';
 
@@ -15,46 +16,63 @@ export default function DeviceConfirmPage() {
   const deviceCode = searchParams.get('code');
 
   useEffect(() => {
+    const token = getAuthToken();
+    if (!token) {
+      // If user is not logged in, redirect to login page
+      // and tell it where to return to after success.
+      const redirectUrl = `/auth/device/confirm?code=${deviceCode}`;
+      router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+      return;
+    }
+
     if (deviceCode) {
       confirmDevice(deviceCode);
     } else {
       setStatus('error');
       setMessage('No device code provided');
     }
-  }, [deviceCode]);
+  }, [deviceCode, router]);
 
   const confirmDevice = async (code: string) => {
     try {
       setStatus('loading');
       setMessage('Confirming device authorization...');
-
+  
+      const token = getAuthToken(); // Token is guaranteed to exist here
+  
       const response = await fetch('http://localhost:8080/api/auth/device/confirm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        credentials: 'include', // Important for session cookies
         body: JSON.stringify({ deviceCode: code }),
       });
-
+  
       if (response.ok) {
         setStatus('success');
         setMessage('Extension connected successfully! You can close this tab and return to VS Code.');
-        
-        // Auto-close after 3 seconds
+  
         setTimeout(() => {
           window.close();
         }, 3000);
       } else {
         const errorData = await response.json();
-        setStatus('error');
-        setMessage(errorData.error || 'Failed to confirm device authorization');
+        if (response.status === 401) {
+          // Handle cases where the token is invalid
+          const redirectUrl = `/auth/device/confirm?code=${deviceCode}`;
+          router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+        } else {
+          setStatus('error');
+          setMessage(errorData.error || 'Failed to confirm device authorization');
+        }
       }
     } catch (error) {
       setStatus('error');
       setMessage('Network error. Please check your connection and try again.');
     }
   };
+  
 
   const getStatusIcon = () => {
     switch (status) {
