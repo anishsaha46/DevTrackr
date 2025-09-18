@@ -10,10 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import io.devTracker.codeTracker.Model.User;
 import io.devTracker.codeTracker.Repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Collections;
 import java.net.URI;
@@ -23,22 +24,35 @@ import java.net.http.HttpResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
+public class JwtAuthenticationFilter extends OncePerRequestFilter implements Ordered {
+    
+    private int order = Ordered.HIGHEST_PRECEDENCE + 1;
 
-@Component // Marks this class as a Spring-managed bean for dependency injection
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
+    private final String googleClientId;
 
     @Autowired
-    private JwtUtil jwtUtil; // Utility class for JWT token operations
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserRepository userRepository,
+                                 @Value("${spring.security.oauth2.client.registration.google.client-id}") String googleClientId) {
+        this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
+        this.googleClientId = googleClientId;
+    }
 
-    @Autowired
-    private UserRepository userRepository; // Repository to fetch user details from DB
+    @Override
+    public int getOrder() {
+        return this.order;
+    }
 
-    @Value("${spring.security.oauth2.client.registration.google.client-id}")
-    private String googleClientId; // Inject Google client ID from application properties
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
+        logger.debug("Processing JWT authentication for request: {}", request.getRequestURI());
 
         if (request.getRequestURI().startsWith("/auth/callback")) {
             // Skip JWT validation for Google OAuth2 callback endpoint
@@ -78,10 +92,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 } else {
-                    logger.error("Invalid ID token"); // Log if user not found
+                    logger.warn("User not found for email: {}", email); // Log if user not found
                 }
             } catch (Exception e) {
-                logger.error("Error validating ID token", e); // Log errors during token validation
+                logger.error("Error validating ID token for client ID: {}", googleClientId, e); // Log errors during token validation
             }
         } else if (header != null && header.startsWith("Bearer ")) {
             token = header.substring(7); // Extract JWT token from Authorization header
@@ -103,4 +117,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response); // Continue with the filter chain
     }
 }
+
+
 
