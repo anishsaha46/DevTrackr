@@ -5,6 +5,8 @@ import io.devTracker.codeTracker.Repository.UserRepository;
 import io.devTracker.codeTracker.Security.JwtUtil;
 import io.devTracker.codeTracker.Security.JwtAuthenticationFilter;
 import io.devTracker.codeTracker.Security.RateLimitingFilter;
+import org.springframework.core.env.Environment;
+import io.devTracker.codeTracker.Service.RateLimitService;
 
 // import jakarta.servlet.http.HttpServletRequest;
 // import jakarta.servlet.http.HttpServletResponse;
@@ -46,12 +48,21 @@ public class SecurityConfig {
 
     @Autowired
     private UserRepository userRepository;
-
+    
     @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    private Environment environment;
 
-    @Autowired
-    private RateLimitingFilter rateLimitingFilter;
+
+
+
+@Autowired
+private RateLimitService rateLimitService;
+
+@Bean
+public RateLimitingFilter rateLimitingFilter() {
+    return new RateLimitingFilter(rateLimitService);
+}
+
 
 @Bean
 SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -83,13 +94,17 @@ SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             .failureHandler(oAuth2AuthenticationFailureHandler())
         );
 
-    // Add the rate limiting filter before the JWT filter
-    http.addFilterBefore(rateLimitingFilter, JwtAuthenticationFilter.class);
+    // Create and add the JWT filter
+    JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(
+        jwtUtil,
+        userRepository,
+        environment.getProperty("spring.security.oauth2.client.registration.google.client-id")
+    );
+    http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
     
-    // Add the JWT filter before the UsernamePasswordAuthenticationFilter
-    http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+    // Add the rate limiting filter before the JWT filter
+    http.addFilterBefore(rateLimitingFilter(), JwtAuthenticationFilter.class);
 
-    // Build and return the security filter chain
     return http.build();
 }
 
@@ -221,3 +236,7 @@ PasswordEncoder passwordEncoder(){
 }
 
 }
+
+
+
+
