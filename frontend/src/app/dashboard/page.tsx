@@ -83,21 +83,28 @@ export default function DashboardPage() {
           }
           setUser(userData);
 
-          // Fetch projects
-          const projectsData = await getUserProjects();
-          setProjects(projectsData || []);
+          try {
+            // Fetch projects
+            const projectsData = await getUserProjects();
+            setProjects(projectsData || []);
 
-          // Fetch activities
-          const activitiesData = await getUserActivities();
-          setActivities(activitiesData || []);
+            // Fetch activities
+            const activitiesData = await getUserActivities();
+            setActivities(activitiesData || []);
 
-          // Fetch summary
-          const summaryData = await getActivitySummary();
-          setSummary(summaryData || null);
+            // Fetch summary
+            const summaryData = await getActivitySummary();
+            setSummary(summaryData || null);
 
-          // Fetch heatmap
-          const heatmapData = await getActivityHeatmap();
-          setHeatmap(heatmapData || []);
+            // Fetch heatmap
+            const heatmapData = await getActivityHeatmap();
+            setHeatmap(heatmapData || []);
+          } catch (error) {
+            console.error("Error fetching dashboard data:", error);
+            if (error instanceof Error && error.message.includes("Unauthorized")) {
+              router.replace("/login");
+            }
+          }
 
           // Fetch timeline
           const timelineData = await getActivityTimeline();
