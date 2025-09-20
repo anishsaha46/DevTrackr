@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 
+import io.devTracker.codeTracker.Model.Project;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,16 +25,33 @@ public class ActivityService {
     @Autowired
     private ActivityRepository activityRepository;
 
+    @Autowired
+    private ProjectService projectService;
+
 
     @CacheEvict(value = {"overview", "projectActivities", "heatmap"}, 
                key = "#user.id", 
                condition = "#activityRequests != null && !#activityRequests.isEmpty()")
     public List<Activity> submitActivities(List<ActivityDTO.ActivityRequest> activityRequests, User user) {
         List<Activity> activities = activityRequests.stream()
-                .map(a -> Activity.builder()
+                .map(req -> {
+                    // Find or create the project to get its ID
+                    Project project = projectService.findOrCreateProject(req.projectName(), user.getId()).getProject();
+                    
+                    // Build the activity with the correct projectId
+                    return Activity.builder()
                         .userId(user.getId())
-                        .projectName(a.projectName())
-                        .build())
+                        .projectId(project.getId())
+                        .projectName(req.projectName())
+                        .language(req.language())
+                        .startTime(java.sql.Timestamp.from(req.startTime()))
+                        .endTime(java.sql.Timestamp.from(req.endTime()))
+                        .file(req.file())
+                        .timeSpent(req.timeSpent())
+                        .sessionId(req.sessionId())
+                        .fileExtension(req.fileExtension())
+                        .build();
+                })
                 .collect(Collectors.toList());
         return activityRepository.saveAll(activities);
     }
@@ -40,24 +59,43 @@ public class ActivityService {
 
     @CacheEvict(value = {"overview", "projectActivities", "heatmap"}, 
                key = "#user.id", 
+               allEntries = true,
                condition = "#activityRequests != null && !#activityRequests.isEmpty()")
     public List<Activity> submitBatchActivities(List<ActivityDTO.ActivityRequest> activityRequests, User user) {
+        System.out.println("\n========== ACTIVITY BATCH START ==========");
+        System.out.println("👤 User: " + user.getId());
+        System.out.println("📊 Activities to process: " + activityRequests.size());
+        
         List<Activity> activities = activityRequests.stream()
-                .<Activity>map(a -> Activity.builder()
-                        .userId(user.getId())
-                        .projectName(a.projectName())
-                        .language(a.language())
-                        .startTime(java.sql.Timestamp.from(a.startTime()))
-                        .endTime(java.sql.Timestamp.from(a.endTime()))
-                        .file(a.file())
-                        .timeSpent(a.timeSpent())
-                        .sessionId(a.sessionId())
-                        .fileExtension(a.fileExtension())
-                        .build())
+                .map(req -> {
+                    try {
+        System.out.println("\n📁 Project: " + req.projectName());
+        Project project = projectService.findOrCreateProject(req.projectName(), user.getId()).getProject();
+        System.out.println("🆔 Project ID: " + project.getId());                        // Build the activity with the correct projectId
+                        Activity activity = Activity.builder()
+                            .userId(user.getId())
+                            .projectId(project.getId())
+                            .projectName(req.projectName())
+                            .language(req.language())
+                            .startTime(java.sql.Timestamp.from(req.startTime()))
+                            .endTime(java.sql.Timestamp.from(req.endTime()))
+                            .file(req.file())
+                            .timeSpent(req.timeSpent())
+                            .sessionId(req.sessionId())
+                            .fileExtension(req.fileExtension())
+                            .build();
+                        System.out.println("Built activity: [projectId=" + activity.getProjectId() 
+                            + ", projectName=" + activity.getProjectName()
+                            + ", timeSpent=" + activity.getTimeSpent() + "]");
+                        return activity;
+                    } catch (Exception e) {
+                        System.err.println("Error processing activity: " + e.getMessage());
+                        e.printStackTrace();
+                        throw e;
+                    }
+                })
                 .collect(Collectors.toList());
-        // Basic server-side validation: ensure reasonable time range and drift
-        long now = System.currentTimeMillis();
-        long maxDriftMs = 5 * 60 * 1000L; // ±5 minutes
+        // Basic server-side validation: ensure reasonable time range
         activities.forEach(act -> {
             if (act.getTimeSpent() == null || act.getTimeSpent() < 1 || act.getTimeSpent() > 8 * 60 * 60) {
                 throw new IllegalArgumentException("Invalid timeSpent");
@@ -65,13 +103,25 @@ public class ActivityService {
             if (act.getStartTime() == null || act.getEndTime() == null || act.getEndTime().before(act.getStartTime())) {
                 throw new IllegalArgumentException("Invalid time range");
             }
-            long startMs = act.getStartTime().getTime();
-            long endMs = act.getEndTime().getTime();
-            if (Math.abs(startMs - now) > maxDriftMs || Math.abs(endMs - now) > maxDriftMs) {
-                throw new IllegalArgumentException("Timestamp drift too large");
+        });
+
+        // Basic server-side validation
+        activities.forEach(act -> {
+            if (act.getTimeSpent() == null || act.getTimeSpent() < 1 || act.getTimeSpent() > 8 * 60 * 60) {
+                throw new IllegalArgumentException("Invalid timeSpent");
+            }
+            if (act.getStartTime() == null || act.getEndTime() == null || act.getEndTime().before(act.getStartTime())) {
+                throw new IllegalArgumentException("Invalid time range");
             }
         });
-        return activityRepository.saveAll(activities);
+
+        // Save and log
+        List<Activity> savedActivities = activityRepository.saveAll(activities);
+        System.out.println("Saved " + savedActivities.size() + " activities to database");
+        savedActivities.forEach(act -> System.out.println("Saved activity: ID=" + act.getId() 
+            + ", projectId=" + act.getProjectId() 
+            + ", projectName=" + act.getProjectName()));
+        return savedActivities;
     }
 
 
@@ -93,8 +143,14 @@ public class ActivityService {
     }
 
 
-    @Cacheable(value = "projectActivities", key = "#userId + '-' + #projectName")
-    public List<Activity> findActivities(String userId, String projectName, Date from, Date to) {
+    @Cacheable(value = "projectActivities", key = "#userId + '-' + (#projectId != null ? #projectId : #projectName)")
+    public List<Activity> findActivities(String userId, String projectName, String projectId, Date from, Date to) {
+        if (projectId != null) {
+            if (from != null && to != null) {
+                return activityRepository.findByUserIdAndProjectIdAndStartTimeBetween(userId, projectId, from, to);
+            }
+            return activityRepository.findByUserIdAndProjectId(userId, projectId);
+        }
         if (projectName != null && from != null && to != null) {
             return activityRepository.findByUserIdAndProjectNameAndStartTimeBetween(userId, projectName, from, to);
         }
@@ -115,7 +171,13 @@ public class ActivityService {
 
     
 
-    public Page<Activity> findActivitiesPage(String userId, String projectName, Date from, Date to, Pageable pageable) {
+    public Page<Activity> findActivitiesPage(String userId, String projectName, String projectId, Date from, Date to, Pageable pageable) {
+        if (projectId != null) {
+            if (from != null && to != null) {
+                return activityRepository.findByUserIdAndProjectIdAndStartTimeBetween(userId, projectId, from, to, pageable);
+            }
+            return activityRepository.findByUserIdAndProjectId(userId, projectId, pageable);
+        }
         if (projectName != null && from != null && to != null) {
             return activityRepository.findByUserIdAndProjectNameAndStartTimeBetween(userId, projectName, from, to, pageable);
         }
