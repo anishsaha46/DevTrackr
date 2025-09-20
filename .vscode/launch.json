@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Run Extension",
+        "type": "extensionHost",
+        "request": "launch",
+        "args": [
+          "--extensionDevelopmentPath=${workspaceFolder}/vscode-extension"
+        ],
+        "outFiles": [
+          "${workspaceFolder}/vscode-extension/out/**/*.js"
+        ],
+        "preLaunchTask": "${defaultBuildTask}"
+      },
+      {
+        "name": "Run Backend",
+        "type": "java",
+        "request": "launch",
+        "mainClass": "io.devTracker.codeTracker.CodeTrackerApplication",
+        "projectName": "codeTracker",
+        "cwd": "${workspaceFolder}/backend"
+      }
+    ],
+    "compounds": [
+      {
+        "name": "Extension + Backend",
+        "configurations": ["Run Backend", "Run Extension"],
+        "stopAll": true,
+        "presentation": {
+          "hidden": false,
+          "group": "dev"
+        }
+      }
+    ]
+  }
