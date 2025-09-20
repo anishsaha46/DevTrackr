@@ -18,21 +18,46 @@ public class ProjectService {
     @Autowired
     private ProjectRepository projectRepository;
 
+    // Helper class to provide context about project creation
+    public static class ProjectCreationResult {
+        private final Project project;
+        private final boolean isNew;
+
+        public ProjectCreationResult(Project project, boolean isNew) {
+            this.project = project;
+            this.isNew = isNew;
+        }
+
+        public Project getProject() {
+            return project;
+        }
+
+        public boolean isNew() {
+            return isNew;
+        }
+    }
+
     /**
-     * Creates a new project for the specified user.
+     * Creates a new project or finds existing one for the specified user.
      *
      * @param name  the name of the project
      * @param userId the ID of the user creating the project
-     * @return the created Project entity
+     * @return ProjectCreationResult containing the project and whether it was newly created
      */
-
-     @CacheEvict(value={"projects","overview"},key="#userId")
-    public Project createProject(String name,String userId){
-        Project project = Project.builder()
-            .name(name)
-            .userId(userId)
-            .build();
-        return projectRepository.save(project);
+    @CacheEvict(value={"projects","overview"},key="#userId")
+    public ProjectCreationResult findOrCreateProject(String projectName, String userId) {
+        Optional<Project> existingProject = projectRepository.findByNameAndUserId(projectName, userId);
+        
+        if (existingProject.isPresent()) {
+            return new ProjectCreationResult(existingProject.get(), false); // Not new
+        } else {
+            Project newProject = Project.builder()
+                .name(projectName)
+                .userId(userId)
+                .build();
+            Project savedProject = projectRepository.save(newProject);
+            return new ProjectCreationResult(savedProject, true); // Is new
+        }
     }
 
     /**
