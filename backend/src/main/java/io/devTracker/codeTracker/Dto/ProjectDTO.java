@@ -4,13 +4,11 @@ import jakarta.validation.constraints.NotBlank;
 import java.time.Instant;
 
 public class ProjectDTO {
+    // Simplified response to only include essential data
     public record ProjectResponse(
         String id,
         String name,
-        String userId,
-        Instant createdAt,
-        Instant updatedAt,
-        long activityCount
+        Instant createdAt
     ) {}
 
     public record CreateProjectRequest(
