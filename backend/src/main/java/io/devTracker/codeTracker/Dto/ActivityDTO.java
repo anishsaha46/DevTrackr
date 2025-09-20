@@ -11,6 +11,7 @@ public class ActivityDTO {
     public record ActivityResponse(
         String id,
         String userId,
+        String projectId,
         String projectName,
         String language,
         Instant startTime,
