@@ -20,6 +20,7 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
+  "extensionKind": ["workspace"],
   "contributes": {
     "commands": [
       {
@@ -70,6 +71,11 @@
           "type": "boolean",
           "default": false,
           "description": "Automatically start tracking when VS Code opens"
+        },
+        "activityTracker.authEndpoint": {
+          "type": "string",
+          "default": "http://localhost:8080/api/auth",
+          "description": "Authentication endpoint for the activity tracker"
         }
       }
     }
