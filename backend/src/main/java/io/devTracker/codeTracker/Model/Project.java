@@ -20,8 +20,10 @@ public class Project {
     private String name;
 
     @CreatedDate
-    private Date createdAt;
+    @Builder.Default
+    private Date createdAt = new Date();
 
     @LastModifiedDate
-    private Date updatedAt;
+    @Builder.Default
+    private Date updatedAt = new Date();
 }
