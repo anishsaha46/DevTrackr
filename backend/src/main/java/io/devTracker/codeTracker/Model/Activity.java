@@ -21,6 +21,7 @@ public class Activity {
     @Id
     private String id;
     private String userId;
+    private String projectId; // Reference to Project.id
     private String projectName;
     private String language;
     private Date startTime;
@@ -31,8 +32,10 @@ public class Activity {
     private String fileExtension; // File extension
 
     @CreatedDate
-    private Date createdAt;
+    @Builder.Default
+    private Date createdAt = new Date();
 
     @LastModifiedDate
-    private Date updatedAt;
+    @Builder.Default
+    private Date updatedAt = new Date();
 }
