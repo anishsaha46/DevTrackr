@@ -1,0 +1,47 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "type": "npm",
+        "script": "watch",
+        "problemMatcher": "$tsc-watch",
+        "isBackground": true,
+        "presentation": {
+          "reveal": "never"
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "options": {
+          "cwd": "${workspaceFolder}/vscode-extension"
+        }
+      },
+      {
+        "label": "Start Backend",
+        "type": "shell",
+        "command": "mvn",
+        "args": [
+          "spring-boot:run"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}/backend"
+        },
+        "group": "build",
+        "isBackground": true,
+        "problemMatcher": {
+          "pattern": {
+            "regexp": "^.*$",
+            "file": 1,
+            "location": 2,
+            "message": 3
+          },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "^.*Starting CodeTrackerApplication.*",
+            "endsPattern": "^.*Started CodeTrackerApplication.*"
+          }
+        }
+      }
+    ]
+  }
