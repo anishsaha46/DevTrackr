@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/activity")
+@RequestMapping("/api/activities")
 public class ActivityController {
     @Autowired
     private ActivityService activityService;
@@ -32,15 +32,17 @@ public class ActivityController {
     * Helper method to convert Activity model to ActivityResponse DTO.
     */
     private ActivityDTO.ActivityResponse convertToResponse(Activity activity) {
+        Date now = new Date();
         return new ActivityDTO.ActivityResponse(
                 activity.getId(),
                 activity.getUserId(),
+                activity.getProjectId(),
                 activity.getProjectName(),
                 activity.getLanguage(),
-                activity.getStartTime().toInstant(),
-                activity.getEndTime().toInstant(),
-                activity.getCreatedAt().toInstant(),
-                activity.getUpdatedAt().toInstant(),
+                activity.getStartTime() != null ? activity.getStartTime().toInstant() : now.toInstant(),
+                activity.getEndTime() != null ? activity.getEndTime().toInstant() : now.toInstant(),
+                activity.getCreatedAt() != null ? activity.getCreatedAt().toInstant() : now.toInstant(),
+                activity.getUpdatedAt() != null ? activity.getUpdatedAt().toInstant() : now.toInstant(),
                 activity.getFile(),
                 activity.getTimeSpent(),
                 activity.getSessionId(),
@@ -77,7 +79,15 @@ public class ActivityController {
             @RequestBody List<ActivityDTO.ActivityRequest> activities,
             @AuthenticationPrincipal User user) {
         
+        System.out.println("Received batch activities request. User: " + user.getId());
+        System.out.println("Number of activities: " + activities.size());
+        activities.forEach(act -> System.out.println("Activity: projectName=" + act.projectName() 
+            + ", startTime=" + act.startTime() 
+            + ", endTime=" + act.endTime()));
+        
         List<Activity> savedActivities = activityService.submitBatchActivities(activities, user);
+        System.out.println("Saved " + savedActivities.size() + " activities");
+        
         List<ActivityDTO.ActivityResponse> responses = savedActivities.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
@@ -88,11 +98,12 @@ public class ActivityController {
 
     /**
     * Retrieve a list of activities for the authenticated user.
-    * Allows optional filtering by project name and date range.
+    * Allows optional filtering by project name/ID and date range.
     */
     @GetMapping
     public List<ActivityDTO.ActivityResponse> getActivities(
             @RequestParam(required = false) String projectName,
+            @RequestParam(required = false) String projectId,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             @AuthenticationPrincipal User user) {
@@ -113,7 +124,7 @@ public class ActivityController {
 
         // Retrieve filtered activities
         List<Activity> activities = activityService.findActivities(
-                user.getId(), projectName, fromDate, toDate);
+                user.getId(), projectName, projectId, fromDate, toDate);
 
         // Convert to response DTOs
         return activities.stream().map(this::convertToResponse).collect(Collectors.toList());
@@ -146,6 +157,7 @@ public class ActivityController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String projectName,
+            @RequestParam(required = false) String projectId,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             @AuthenticationPrincipal User user) {
@@ -166,7 +178,7 @@ public class ActivityController {
 
         // Retrieve paginated and filtered activities
         return activityService.findActivitiesPage(
-                user.getId(), projectName, fromDate, toDate, pageable)
+                user.getId(), projectName, projectId, fromDate, toDate, pageable)
                 .map(this::convertToResponse);
     }
 
@@ -179,7 +191,21 @@ public class ActivityController {
             @AuthenticationPrincipal User user) {
 
         List<Activity> activities = activityService.findActivities(
-                user.getId(), projectName, null, null);
+                user.getId(), projectName, null, null, null);
+
+        return activities.stream().map(this::convertToResponse).collect(Collectors.toList());
+    }
+
+    /**
+    * Get all activities by project ID for the authenticated user.
+    */
+    @GetMapping("/by-project-id/{projectId}")
+    public List<ActivityDTO.ActivityResponse> getByProjectId(
+            @PathVariable String projectId,
+            @AuthenticationPrincipal User user) {
+
+        List<Activity> activities = activityService.findActivities(
+                user.getId(), null, projectId, null, null);
 
         return activities.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
