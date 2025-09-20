@@ -19,17 +19,20 @@ public interface ActivityRepository extends MongoRepository<Activity, String> {
 
     Page<Activity> findByUserId(String userId, Pageable pageable);
 
-    // New optimized helpers (list)
+    // Project name based queries
     List<Activity> findByUserIdAndProjectName(String userId, String projectName);
-
     List<Activity> findByUserIdAndProjectNameAndStartTimeBetween(String userId, String projectName, Date start, Date end);
-
+    Page<Activity> findByUserIdAndProjectName(String userId, String projectName, Pageable pageable);
+    Page<Activity> findByUserIdAndProjectNameAndStartTimeBetween(String userId, String projectName, Date start, Date end, Pageable pageable);
     long countByUserIdAndProjectName(String userId, String projectName);
 
-    // New pageable helpers
-    Page<Activity> findByUserIdAndProjectName(String userId, String projectName, Pageable pageable);
+    // Project ID based queries
+    List<Activity> findByUserIdAndProjectId(String userId, String projectId);
+    List<Activity> findByUserIdAndProjectIdAndStartTimeBetween(String userId, String projectId, Date start, Date end);
+    Page<Activity> findByUserIdAndProjectId(String userId, String projectId, Pageable pageable);
+    Page<Activity> findByUserIdAndProjectIdAndStartTimeBetween(String userId, String projectId, Date start, Date end, Pageable pageable);
+    long countByUserIdAndProjectId(String userId, String projectId);
 
+    // Time range based pageable queries
     Page<Activity> findByUserIdAndStartTimeBetween(String userId, Date start, Date end, Pageable pageable);
-
-    Page<Activity> findByUserIdAndProjectNameAndStartTimeBetween(String userId, String projectName, Date start, Date end, Pageable pageable);
 }
