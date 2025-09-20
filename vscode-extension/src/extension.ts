@@ -5,11 +5,12 @@ import { scheduler } from 'timers/promises';
 
 // Interface defining the structure of activity data sent to the server
 interface ActivityData {
-  projectId: string;      // Unique identifier for the project
+  projectName: string;     // Project name (workspace folder name)
   language: string;       // Programming language of the file
   file: string;          // File name/path
   timeSpent: number;     // Time spent in seconds
-  timestamp: string;     // ISO timestamp of the activity
+  startTime: string;     // Activity start time ISO timestamp
+  endTime: string;       // Activity end time ISO timestamp
   sessionId?: string;    // Optional session identifier
   fileExtension?: string; // Optional file extension
 }
@@ -45,6 +46,9 @@ export class ActivityTracker{
   
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
+    
+    // Register workspace folder listener
+    this.registerWorkspaceFolderListener();
     
     // Create status bar item on the right side with priority 100
     this.statusBarItem = vscode.window.createStatusBarItem(
@@ -105,6 +109,55 @@ private async getConfiguration() {
     // Last resort: use configured project ID or default
     const config = vscode.workspace.getConfiguration('activityTracker');
     return config.get<string>('projectId', 'unknown-project');
+  }
+
+  // Register project with the backend
+  private async registerProject(projectName: string) {
+    try {
+      const config = await this.getConfiguration();
+      if (!config.jwtToken) {
+        // Don't try to register if the user isn't logged in
+        return;
+      }
+
+      const projectEndpoint = `${config.apiEndpoint.replace('/activities', '')}/projects`;
+
+      const response = await fetch(projectEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.jwtToken}`
+        },
+        body: JSON.stringify({ name: projectName })
+      });
+
+      if (response.ok) {
+        console.log(`Successfully registered project: ${projectName}`);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        // It might fail if the project already exists, which is fine
+        console.log(`Failed to register project '${projectName}': ${errorData.message || response.status}`);
+      }
+    } catch (error) {
+      console.error('Error registering project:', error);
+    }
+  }
+
+  // Listen for workspace folder changes
+  private registerWorkspaceFolderListener() {
+    // When a folder is opened, immediately try to register it
+    if (vscode.workspace.workspaceFolders) {
+      for (const folder of vscode.workspace.workspaceFolders) {
+        this.registerProject(folder.name);
+      }
+    }
+
+    // Also listen for any future folders being added to the workspace
+    vscode.workspace.onDidChangeWorkspaceFolders(event => {
+      for (const folder of event.added) {
+        this.registerProject(folder.name);
+      }
+    });
   }
 
   // Update the status bar item display based on tracking state
@@ -248,13 +301,15 @@ private async getConfiguration() {
     const config = await this.getConfiguration();
     
     // Create queued activity object with all required data
+    const now = new Date();
     const queuedActivity: QueuedActivity = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,  // Unique ID
-      projectId: document ? this.detectProjectId(document) : config.projectId,
+      projectName: document ? this.detectProjectId(document) : config.projectId,
       language: activity.language,
       file: activity.fileName,
       timeSpent: Math.round(activity.totalTime / 1000), // Convert milliseconds to seconds
-      timestamp: new Date().toISOString(),              // Current timestamp in ISO format
+      startTime: new Date(now.getTime() - activity.totalTime).toISOString(), // Activity start time
+      endTime: now.toISOString(),                                           // Activity end time
       sessionId: this.currentSessionId,
       fileExtension: document ? this.getFileExtension(document) : undefined
     };
