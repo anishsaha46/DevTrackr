@@ -47,7 +47,12 @@ export async function apiFetch<T = any>(path: string, init: RequestInit = {}): P
   // Check if the response is JSON
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("application/json")) {
-    return res.json(); // Parse and return the JSON response
+    try {
+      return res.json(); // Parse and return the JSON response
+    } catch (error) {
+      console.error("Failed to parse JSON response:", error);
+      throw new Error("Invalid JSON response from server");
+    }
   }
 
   // If the response is not JSON, return undefined
