@@ -27,11 +27,15 @@ public class OverviewService {
 
     @Cacheable(value = "overview", key = "#user.id")
     public OverviewDTO.Summary getOverview(User user) {
+        System.out.println("Calculating overview for user: " + user.getId());
+        
         // Fetch all projects associated with the user
         List<Project> projects = projectRepository.findByUserId(user.getId());
+        System.out.println("Found " + projects.size() + " projects");
 
         // Fetch all activities associated with the user
         List<Activity> activities = activityRepository.findByUserId(user.getId());
+        System.out.println("Found " + activities.size() + " activities");
 
         // Count total number of projects and activities
         long totalProjects = projects.size();
