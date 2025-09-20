@@ -13,4 +13,6 @@ public interface ProjectRepository extends MongoRepository<Project, String> {
     long countByUserId(String userId);
 
     Optional<Project> findTopByUserIdOrderByCreatedAtDesc(String userId);
+
+    Optional<Project> findByNameAndUserId(String name, String userId);
 } 
