@@ -17,6 +17,18 @@ public class OverviewController {
     private OverviewService overviewService;
     @GetMapping
     public OverviewDTO.Summary getOverview(@AuthenticationPrincipal User user) {
-        return overviewService.getOverview(user);
+        System.out.println("\n========== OVERVIEW REQUEST START ==========");
+        System.out.println("User ID: " + (user != null ? user.getId() : "null"));
+        try {
+            OverviewDTO.Summary summary = overviewService.getOverview(user);
+            System.out.println("Successfully generated overview");
+            System.out.println("========== OVERVIEW REQUEST END ==========\n");
+            return summary;
+        } catch (Exception e) {
+            System.err.println("Error generating overview: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("========== OVERVIEW REQUEST END WITH ERROR ==========\n");
+            throw e;
+        }
     }
 }
