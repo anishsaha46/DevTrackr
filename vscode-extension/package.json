@@ -1,9 +1,9 @@
 {
-  "name": "activity-tracker",
-  "displayName": "Activity Tracker",
-  "description": "Track coding activity and send data to backend API",
+  "name": "devtrackr",
+  "displayName": "DevTrackr",
+  "description": "Track developer activity and analyze coding patterns",
   "version": "1.0.0",
-  "publisher": "your-publisher-name",
+  "publisher": "anishsaha46",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -24,58 +24,58 @@
   "contributes": {
     "commands": [
       {
-        "command": "activity-tracker.login",
-        "title": "Login to CodeTracker",
-        "category": "Activity Tracker"
+        "command": "devtrackr.login",
+        "title": "Login to DevTrackr",
+        "category": "DevTrackr"
       },
       {
-        "command": "activity-tracker.logout",
+        "command": "devtrackr.logout",
         "title": "Logout",
-        "category": "Activity Tracker"
+        "category": "DevTrackr"
       },
       {
-        "command": "activity-tracker.startTracking",
+        "command": "devtrackr.startTracking",
         "title": "Start Tracking",
-        "category": "Activity Tracker"
+        "category": "DevTrackr"
       },
       {
-        "command": "activity-tracker.stopTracking",
+        "command": "devtrackr.stopTracking",
         "title": "Stop Tracking",
-        "category": "Activity Tracker"
+        "category": "DevTrackr"
       },
       {
-        "command": "activity-tracker.toggleTracking",
+        "command": "devtrackr.toggleTracking",
         "title": "Toggle Tracking",
-        "category": "Activity Tracker"
+        "category": "DevTrackr"
       }
     ],
     "configuration": {
-      "title": "Activity Tracker",
+      "title": "DevTrackr",
       "properties": {
-        "activityTracker.apiEndpoint": {
+        "devtrackr.apiEndpoint": {
           "type": "string",
           "default": "http://localhost:8080/api/activities",
           "description": "Backend API endpoint for activity data (supports /batch for bulk operations)"
         },
-        "activityTracker.projectId": {
+        "devtrackr.projectId": {
           "type": "string",
           "default": "demo-project",
           "description": "Project identifier for activity tracking"
         },
-        "activityTracker.syncInterval": {
+        "devtrackr.syncInterval": {
           "type": "number",
           "default": 60,
           "description": "Interval in seconds to sync activity data"
         },
-        "activityTracker.autoStart": {
+        "devtrackr.autoStart": {
           "type": "boolean",
           "default": false,
           "description": "Automatically start tracking when VS Code opens"
         },
-        "activityTracker.authEndpoint": {
+        "devtrackr.authEndpoint": {
           "type": "string",
           "default": "http://localhost:8080/api/auth",
-          "description": "Authentication endpoint for the activity tracker"
+          "description": "Authentication endpoint for DevTrackr"
         }
       }
     }
