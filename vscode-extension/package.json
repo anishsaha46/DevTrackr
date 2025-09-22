@@ -16,6 +16,7 @@
     "analytics",
     "productivity"
   ],
+  "icon": "images/logo.png", 
   "activationEvents": [
     "onStartupFinished"
   ],
