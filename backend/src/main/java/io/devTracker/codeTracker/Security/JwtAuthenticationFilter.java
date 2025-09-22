@@ -81,7 +81,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter implements Ord
                 JsonNode root = mapper.readTree(responseBody);
 
                 String email = root.get("email").asText(); // Extract email from token
-                String userId = root.get("sub").asText(); // Extract Google user ID (sub)
+                // Extract Google user ID (sub) and use it
+                String userIdFromGoogle = root.get("sub").asText();
+                logger.debug("Processing Google user with ID: {}", userIdFromGoogle);
 
                 // Check if user exists in DB
                 User user = userRepository.findByEmail(email).orElse(null);
