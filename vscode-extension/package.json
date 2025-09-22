@@ -3,7 +3,7 @@
   "displayName": "DevTrackr",
   "description": "Track developer activity and analyze coding patterns",
   "version": "1.0.0",
-  "publisher": "anishsaha46",
+  "publisher": "devtrackr-io",
   "engines": {
     "vscode": "^1.74.0"
   },
