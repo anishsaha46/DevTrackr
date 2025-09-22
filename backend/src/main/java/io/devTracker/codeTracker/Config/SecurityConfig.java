@@ -48,6 +48,27 @@ public class SecurityConfig {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private Environment env;
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",  // Local development
+            "https://*.vercel.app",   // Vercel deployment
+            env.getProperty("FRONTEND_URL", "https://devtrackr.vercel.app") // Production URL
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Origin"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
     
     @Autowired
     private Environment environment;
@@ -205,30 +226,6 @@ AuthenticationFailureHandler oAuth2AuthenticationFailureHandler() {
     };
 }
 
-
-@Bean
-CorsConfigurationSource corsConfigurationSource() {
-    // Create a new CORS configuration
-    CorsConfiguration configuration = new CorsConfiguration();
-
-    // Allow requests from this origin (e.g., your React frontend)
-    configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
-
-    // Allow these HTTP methods
-    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-    // Allow these headers
-    configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Auth-Token"));
-
-    // Allow cookies and credentials (important if you're using cookies)
-    configuration.setAllowCredentials(true);
-
-    // Register the config for all endpoints
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
-
-    return source;
-}
 
 @Bean
 PasswordEncoder passwordEncoder(){
