@@ -29,7 +29,7 @@ interface QueuedActivity extends ActivityData {
 }
 
 
-export class ActivityTracker{
+export class DevTrackr{
  // Private properties for managing tracking state
   private isTracking = false;                    // Whether tracking is currently active
   private currentActivity: FileActivity | null = null;  // Current file being tracked
@@ -56,7 +56,7 @@ export class ActivityTracker{
       100
     );
     // Set command to execute when status bar item is clicked
-    this.statusBarItem.command = 'activity-tracker.toggleTracking';
+    this.statusBarItem.command = 'devtrackr.toggleTracking';
     // Update the status bar display and make it visible
     this.updateStatusBar();
     this.statusBarItem.show();
@@ -69,13 +69,13 @@ export class ActivityTracker{
 
 // Get configuration settings from VS Code settings and secure storage
 private async getConfiguration() {
-  const config = vscode.workspace.getConfiguration('activityTracker');
+  const config = vscode.workspace.getConfiguration('devtrackr');
   
-  let jwtToken = await this.context.secrets.get('activityTracker.jwtToken');
+  let jwtToken = await this.context.secrets.get('devtrackr.jwtToken');
   if (!jwtToken) {
     jwtToken = config.get<string>('jwtToken', '');
     if (jwtToken) {
-      await this.context.secrets.store('activityTracker.jwtToken', jwtToken);
+      await this.context.secrets.store('devtrackr.jwtToken', jwtToken);
       await config.update('jwtToken', undefined, vscode.ConfigurationTarget.Global);
     }
   }
@@ -107,7 +107,7 @@ private async getConfiguration() {
     }
     
     // Last resort: use configured project ID or default
-    const config = vscode.workspace.getConfiguration('activityTracker');
+    const config = vscode.workspace.getConfiguration('devtrackr');
     return config.get<string>('projectId', 'unknown-project');
   }
 
@@ -341,7 +341,7 @@ private async getConfiguration() {
       
       // Check if JWT token is configured
       if (!config.jwtToken) {
-        console.warn('JWT token not configured for Activity Tracker');
+        console.warn('JWT token not configured for DevTrackr');
         this.showErrorOnce('JWT token not configured. Please set up authentication.');
         return false;
       }
@@ -476,13 +476,13 @@ private async getConfiguration() {
 
   // Save offline cache to VS Code's persistent storage
   private saveOfflineCache() {
-    this.context.globalState.update('activityTracker.offlineCache', this.offlineCache);
+    this.context.globalState.update('devtrackr.offlineCache', this.offlineCache);
   }
   
 
   // Load offline cache from VS Code's persistent storage
   private loadOfflineCache() {
-    const cached = this.context.globalState.get<QueuedActivity[]>('activityTracker.offlineCache', []);
+    const cached = this.context.globalState.get<QueuedActivity[]>('devtrackr.offlineCache', []);
     this.offlineCache = cached;
     console.log(`Loaded ${cached.length} cached activities from offline storage`);
   }
@@ -498,7 +498,7 @@ public async startTracking() {
   // Check if JWT token exists
   if (!config.jwtToken) {
     const action = await vscode.window.showWarningMessage(
-      'Not logged in to CodeTracker. Please log in to start tracking.',
+      'Not logged in to DevTrackr. Please log in to start tracking.',
       'Login'
     );
     if (action === 'Login') {
@@ -522,7 +522,7 @@ public async startTracking() {
     });
 
     if (!validationResponse.ok) {
-      await this.context.secrets.delete('activityTracker.jwtToken');
+      await this.context.secrets.delete('devtrackr.jwtToken');
       const action = await vscode.window.showWarningMessage(
         'Your session has expired. Please log in again.',
         'Login'
@@ -648,8 +648,8 @@ public async startTracking() {
       
       if (token) {
         console.log('Device login: received token:', token);
-        await this.context.secrets.store('activityTracker.jwtToken', token);
-        vscode.window.showInformationMessage('✅ Successfully logged in to CodeTracker!');
+        await this.context.secrets.store('devtrackr.jwtToken', token);
+        vscode.window.showInformationMessage('✅ Successfully logged in to DevTrackr!');
         return true;
       }
       
@@ -738,8 +738,8 @@ private async pollForTokenWithProgress(deviceCode: string, interval: number, exp
 
   // Public method to logout (clear stored token)
   public async logout() {
-    await this.context.secrets.delete('activityTracker.jwtToken');
-    vscode.window.showInformationMessage('Logged out from CodeTracker');
+    await this.context.secrets.delete('devtrackr.jwtToken');
+    vscode.window.showInformationMessage('Logged out from DevTrackr');
   }
 
 
@@ -799,34 +799,34 @@ private async pollForTokenWithProgress(deviceCode: string, interval: number, exp
 
 // Extension activation function - called when extension is loaded
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Activity Tracker extension is now active');
+  console.log('DevTrackr extension is now active');
 
   // Create the main tracker instance
-  const tracker = new ActivityTracker(context);
+  const tracker = new DevTrackr(context);
   
   // Register event listeners for file activities
   tracker.registerEventListeners();
 
   // Register VS Code commands that users can execute
-  const startCommand = vscode.commands.registerCommand('activity-tracker.startTracking', () => {
+  const startCommand = vscode.commands.registerCommand('devtrackr.startTracking', () => {
     tracker.startTracking();
   });
 
-  const stopCommand = vscode.commands.registerCommand('activity-tracker.stopTracking', () => {
+  const stopCommand = vscode.commands.registerCommand('devtrackr.stopTracking', () => {
     tracker.stopTracking();
   });
 
-  const toggleCommand = vscode.commands.registerCommand('activity-tracker.toggleTracking', () => {
+  const toggleCommand = vscode.commands.registerCommand('devtrackr.toggleTracking', () => {
     tracker.toggleTracking();
   });
 
   // Command to login with device authorization
-  const loginCommand = vscode.commands.registerCommand('activity-tracker.login', async () => {
+  const loginCommand = vscode.commands.registerCommand('devtrackr.login', async () => {
     await tracker.loginWithWeb();
   });
 
   // Command to logout
-  const logoutCommand = vscode.commands.registerCommand('activity-tracker.logout', async () => {
+  const logoutCommand = vscode.commands.registerCommand('devtrackr.logout', async () => {
     await tracker.logout();
   });
 
@@ -834,7 +834,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(startCommand, stopCommand, toggleCommand, loginCommand, logoutCommand, tracker);
 
   // Auto-start tracking if configured in settings
-  const config = vscode.workspace.getConfiguration('activityTracker');
+  const config = vscode.workspace.getConfiguration('devtrackr');
   const autoStart = config.get<boolean>('autoStart', false);
   
   if (autoStart) {
@@ -844,7 +844,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 // Extension deactivation function - called when extension is unloaded
 export async function deactivate() {
-  console.log('Activity Tracker extension is now deactivated');
+  console.log('DevTrackr extension is now deactivated');
   // Extension cleanup is handled by the dispose() method
 }
 
