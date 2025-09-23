@@ -58,3 +58,17 @@ export async function apiFetch<T = any>(path: string, init: RequestInit = {}): P
   // If the response is not JSON, return undefined
   return undefined;
 }
+
+/**
+ * Checks with the backend to see if the current user has any active devices.
+ */
+export async function checkHasDevices(): Promise<boolean> {
+  try {
+    const data = await apiFetch<{ hasDevices: boolean }>('/auth/device/status/has-devices');
+    return data?.hasDevices || false;
+  } catch (error) {
+    console.error("Failed to check for active devices:", error);
+    return false;
+  }
+  
+}
