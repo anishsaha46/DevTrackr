@@ -27,6 +27,15 @@ public class DeviceAuthService {
     
     @Autowired
     private UserRepository UserRepository;
+
+    /**
+     * Checks if a user has any active, connected devices.
+     * @param userId The ID of the user to check.
+     * @return true if the user has at least one active device, false otherwise.
+     */
+    public boolean hasActiveDevices(String userId) {
+        return deviceRepository.findByUserIdAndIsActiveTrue(userId).size() > 0;
+    }
     
     @Autowired
     private JwtUtil jwtUtil;
