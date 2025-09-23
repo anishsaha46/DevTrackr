@@ -24,6 +24,19 @@ public class DeviceAuthController {
     
     @Autowired
     private DeviceAuthService deviceAuthService;
+
+    /**
+     * Endpoint for the frontend to check if a user has any active devices.
+     */
+    @GetMapping("/status/has-devices")
+    public ResponseEntity<Map<String, Boolean>> hasActiveDevices(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            // If there's no user, they definitely don't have devices connected.
+            return ResponseEntity.ok(Map.of("hasDevices", false));
+        }
+        boolean hasDevices = deviceAuthService.hasActiveDevices(user.getId());
+        return ResponseEntity.ok(Map.of("hasDevices", hasDevices));
+    }
     
     /**
      * Initiate device authorization flow
