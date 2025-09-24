@@ -1,0 +1,53 @@
+# Name of the GitHub Actions workflow
+name: Create VS Code Extension Release
+
+# This workflow runs automatically when you push a new tag
+# that starts with 'v' (e.g., v1.0.0, v1.2.3)
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install VSCE globally
+        run: npm install -g @vscode/vsce
+
+      - name: Package the extension
+        run: vsce package
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref_name }}
+          body: "See the latest changes in this release."
+          draft: false
+          prerelease: false
+
+      - name: Get VSIX file name
+        id: get_vsix_name
+        run: echo "VSIX_NAME=$(ls *.vsix)" >> $GITHUB_ENV
+
+      - name: Upload .vsix file to the Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ env.VSIX_NAME }}
+          asset_name: ${{ env.VSIX_NAME }}
+          asset_content_type: application/vsix
