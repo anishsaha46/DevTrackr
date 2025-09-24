@@ -1,0 +1,66 @@
+name: Release VS Code Extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      #checks if any files inside the vscode-extension folder were changed.
+      # If not, the rest of the job is skipped.
+      - name: Check for extension changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            extension:
+              - 'vscode-extension/**'
+
+      # Only run the following steps if the 'extension' path has changes
+      - name: Setup Node.js
+        if: steps.filter.outputs.extension == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install VSCE and package extension
+        if: steps.filter.outputs.extension == 'true'
+        # Run all commands within the extension's directory
+        working-directory: ./vscode-extension 
+        run: |
+          npm install -g @vscode/vsce
+          vsce package
+
+      - name: Create GitHub Release
+        if: steps.filter.outputs.extension == 'true'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Get VSIX file name
+        if: steps.filter.outputs.extension == 'true'
+        id: get_vsix_name
+        working-directory: ./vscode-extension
+        run: echo "VSIX_NAME=$(ls *.vsix)" >> $GITHUB_ENV
+
+      - name: Upload .vsix file to the Release
+        if: steps.filter.outputs.extension == 'true'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./vscode-extension/${{ env.VSIX_NAME }}
+          asset_name: ${{ env.VSIX_NAME }}
+          asset_content_type: application/vsix
