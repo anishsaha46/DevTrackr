@@ -6,7 +6,7 @@ name: Create VS Code Extension Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - '1.0.0'
 
 jobs:
   build-and-release:
