@@ -25,7 +25,7 @@ export default function NavBar() {
 
   return (
     <nav className="w-full flex justify-between items-center px-8 py-4 border-b bg-background/80 sticky top-0 z-50">
-      <Link href="/" className="text-xl font-bold text-gray-900 hover:text-gray-700 transition-colors">CodeTracker</Link>
+      <Link href="/" className="text-xl font-bold text-gray-900 hover:text-gray-700 transition-colors">DevTrackr</Link>
       {isAuthed ? (
         <div className="flex items-center gap-3">
           <Link href="/dashboard"><Button variant="outline">Dashboard</Button></Link>
