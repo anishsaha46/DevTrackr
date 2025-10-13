@@ -45,6 +45,23 @@ export default function ActivitiesPage() {
 
   useEffect(() => { fetchPage(0, size); }, []);
 
+  // Collapse by projectName to avoid clutter; show one row per project with total duration
+  const grouped = useMemo(() => {
+    const map = new Map<string, { projectName: string; totalMs: number; language: string; lastStart: number }>();
+    for (const a of rows) {
+      const key = a.projectName;
+      const dur = Math.max(0, new Date(a.endTime).getTime() - new Date(a.startTime).getTime());
+      const prev = map.get(key);
+      if (!prev) {
+        map.set(key, { projectName: key, totalMs: dur, language: a.language, lastStart: new Date(a.startTime).getTime() });
+      } else {
+        prev.totalMs += dur;
+        prev.lastStart = Math.max(prev.lastStart, new Date(a.startTime).getTime());
+      }
+    }
+    return Array.from(map.values()).sort((a,b)=> b.lastStart - a.lastStart);
+  }, [rows]);
+
   return (
     <div className="grid gap-6">
       <Card>
@@ -76,18 +93,18 @@ export default function ActivitiesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-muted-foreground">
-                <tr><th className="py-2">Date</th><th>Project</th><th>Language</th><th>Duration</th></tr>
+                <tr><th className="py-2">Last Activity</th><th>Project</th><th>Language</th><th>Total Duration</th></tr>
               </thead>
               <tbody>
-                {rows.map((a:any) => (
-                  <tr key={a.id} className="border-t">
-                    <td className="py-2">{new Date(a.startTime).toLocaleString()}</td>
-                    <td>{a.projectName}</td>
-                    <td>{a.language}</td>
-                    <td>{Math.max(0, (new Date(a.endTime).getTime()-new Date(a.startTime).getTime())/3600000).toFixed(2)} h</td>
+                {grouped.map((g:any, idx:number) => (
+                  <tr key={idx} className="border-t cursor-pointer" onClick={()=>setProjectName(g.projectName)}>
+                    <td className="py-2">{new Date(g.lastStart).toLocaleString()}</td>
+                    <td>{g.projectName}</td>
+                    <td>{g.language}</td>
+                    <td>{(g.totalMs/3600000).toFixed(2)} h</td>
                   </tr>
                 ))}
-                {rows.length === 0 && <tr><td className="py-4 text-muted-foreground" colSpan={4}>No activities</td></tr>}
+                {grouped.length === 0 && <tr><td className="py-4 text-muted-foreground" colSpan={4}>No activities</td></tr>}
               </tbody>
             </table>
           </div>
