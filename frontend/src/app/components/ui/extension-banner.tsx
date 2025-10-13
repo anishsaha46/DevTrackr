@@ -4,8 +4,8 @@ import { Button } from "@/app/components/ui/button";
 import { Download } from "lucide-react";
 
 export function ExtensionDownloadBanner() {
-  // Local download URL from the public downloads directory
-  const downloadUrl = "/downloads/devtrackr-1.0.0.vsix";
+  // GitHub release download URL
+  const downloadUrl = "https://github.com/anishsaha46/DevTrackr/releases/download/v1.0.0/devtrackr-1.0.0.vsix";
 
   return (
     <Card className="mb-8 bg-blue-50 border-blue-200">
