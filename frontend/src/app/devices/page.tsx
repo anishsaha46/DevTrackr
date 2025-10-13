@@ -122,6 +122,27 @@ export default function DevicesPage() {
     );
   }
 
+  // Group by deviceId to avoid duplicate cards for same device
+  const groupedDevices: Device[] = Object.values(
+    devices.reduce<Record<string, Device>>((acc, d) => {
+      const existing = acc[d.deviceId];
+      if (!existing) {
+        acc[d.deviceId] = d;
+      } else {
+        // Keep earliest connected, latest lastSeen, and latest status/active
+        acc[d.deviceId] = {
+          ...existing,
+          id: d.id, // keep latest id for actions
+          status: d.status || existing.status,
+          isActive: d.isActive || existing.isActive,
+          createdAt: new Date(existing.createdAt) < new Date(d.createdAt) ? existing.createdAt : d.createdAt,
+          lastSeen: new Date(existing.lastSeen) > new Date(d.lastSeen) ? existing.lastSeen : d.lastSeen,
+        };
+      }
+      return acc;
+    }, {})
+  );
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
@@ -148,10 +169,10 @@ export default function DevicesPage() {
         </div>
       )}
 
-      {/* Devices Grid */}
-      {devices.length > 0 ? (
+      {/* Devices Grid (deduped by deviceId) */}
+      {groupedDevices.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {devices.map((device) => (
+          {groupedDevices.map((device) => (
             <Card key={device.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
