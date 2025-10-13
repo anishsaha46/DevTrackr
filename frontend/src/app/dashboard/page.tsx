@@ -5,6 +5,8 @@ import {Tabs,TabsContent,TabsList,TabsTrigger} from "@/app/components/ui/tabs";
 import { useEffect,useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser,getUserProjects,getUserActivities,getActivitySummary,getActivityHeatmap,getActivityTimeline } from "../lib/api";
+import { checkHasDevices } from "../lib/api-client";
+import { ExtensionDownloadBanner } from "../components/ui/extension-banner";
 import { Skeleton } from "../components/ui/skeleton";
 import { Avatar,AvatarFallback,AvatarImage } from "../components/ui/avatar";
 import { CalendarIcon, ClockIcon, CodeIcon, FolderIcon, GitBranchIcon, UserIcon, Monitor } from "lucide-react";
@@ -60,6 +62,7 @@ export default function DashboardPage() {
   const [timeline, setTimeline] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [showExtensionBanner, setShowExtensionBanner] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -83,6 +86,10 @@ export default function DashboardPage() {
           }
           setUser(userData);
 
+          // Check if user has active devices
+          const hasDevices = await checkHasDevices();
+          setShowExtensionBanner(!hasDevices);
+
           try {
             // Fetch projects
             const projectsData = await getUserProjects();
@@ -95,6 +102,10 @@ export default function DashboardPage() {
             // Fetch summary
             const summaryData = await getActivitySummary();
             setSummary(summaryData || null);
+
+            // Check if user has active devices
+            const hasDevices = await checkHasDevices();
+            setShowExtensionBanner(!hasDevices);
 
             // Fetch heatmap
             const heatmapData = await getActivityHeatmap();
@@ -172,6 +183,11 @@ export default function DashboardPage() {
         </div>
         <Button variant="outline" onClick={handleLogout}>Logout</Button>
       </div>
+
+      {/* Extension Download Banner */}
+      {showExtensionBanner && (
+        <ExtensionDownloadBanner />
+      )}
 
       {/* Main dashboard content */}
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
