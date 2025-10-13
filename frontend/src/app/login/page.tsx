@@ -61,10 +61,10 @@ export default function LoginPage() {
 
         {/* Main Content */}
         <div className="relative z-10 flex flex-col justify-center items-center h-full p-12 text-center">
-          {/* CodeTracker Logo */}
+          {/* DevTrackr Logo */}
           <div className="absolute top-0 left-0 p-8">
             <Link href="/" className="text-2xl font-bold text-purple-900 hover:text-purple-700 transition-colors">
-              CodeTracker
+              DevTrackr
             </Link>
           </div>
 
@@ -141,7 +141,11 @@ export default function LoginPage() {
 
           {/* Social Login Buttons */}
           <div className="space-y-3">
-            <a href="http://localhost:8080/oauth2/authorization/google" className="w-full">
+            {/* Use direct Google OAuth URL and compute redirect from current origin */}
+            <a
+              href={`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "")}&redirect_uri=${encodeURIComponent((typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000') + '/auth/google/callback')}&response_type=code&scope=${encodeURIComponent("openid profile email")}&access_type=online&prompt=consent`}
+              className="w-full"
+            >
               <Button 
                 variant="outline" 
                 className="w-full h-12 text-base mb-6 border-gray-300 hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98] transform"
