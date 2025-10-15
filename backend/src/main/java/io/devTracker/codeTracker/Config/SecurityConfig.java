@@ -105,6 +105,9 @@ SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             // Permit device auth initiation (no auth required)
             .requestMatchers("/api/auth/device", "/api/auth/device/status/**").permitAll()
             
+            // Permit Prometheus and Actuator endpoints
+            .requestMatchers("/actuator/**").permitAll()
+            
             // All other requests must be authenticated
             .anyRequest().authenticated()
         )
