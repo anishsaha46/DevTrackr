@@ -1,0 +1,20 @@
+groups:
+  - name: devtrackr_alerts
+    rules:
+      - alert: HighRequestLatency
+        expr: http_server_requests_seconds_sum / http_server_requests_seconds_count > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency on {{ $labels.instance }}"
+          description: "Request latency is above 500ms (current value: {{ $value }}s)"
+      
+      - alert: ApiErrorRate
+        expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / sum(rate(http_server_requests_seconds_count[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High API error rate"
+          description: "Error rate is above 5% (current value: {{ $value }})"
