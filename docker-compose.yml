@@ -24,6 +24,32 @@ services:
       - mongo-data:/data/db
     networks:
       - devtrackr-network
+      
+  prometheus:
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+    networks:
+      - devtrackr-network
+    depends_on:
+      - backend
+      
+  grafana:
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - devtrackr-network
+    depends_on:
+      - prometheus
 
 networks:
   devtrackr-network:
@@ -31,3 +57,5 @@ networks:
 
 volumes:
   mongo-data:
+  prometheus-data:
+  grafana-data:
