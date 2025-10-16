@@ -1,6 +1,20 @@
-# Activity Tracker Extension
+<p align="center">
+  <img src="images/logo.png" width="128" />
+</p>
 
-A VS Code extension that tracks your coding activity and sends data to a backend API for analytics.
+<h1 align="center">DevTrackr</h1>
+<p align="center">🚀 A VS Code extension for developer activity tracking and analytics</p>
+
+[![Version](https://img.shields.io/visual-studio-marketplace/v/devtrackr-io.devtrackr?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=devtrackr-io.devtrackr)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/devtrackr-io.devtrackr?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=devtrackr-io.devtrackr)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/devtrackr-io.devtrackr?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=devtrackr-io.devtrackr)
+
+---
+
+
+# DevTrackr Extension
+
+A VS Code extension for comprehensive developer activity tracking and analytics.
 
 ## Features
 
